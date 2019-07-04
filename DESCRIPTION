@@ -1,0 +1,17 @@
+Package: dcortools
+Title: Providing fast and flexible functions for distance correlation analysis
+Version: 0.0.0.9000
+Authors@R: c(person("Dominic", "Edelmann", email = "dominic.edelmann@dkfz-heidelberg.de", role = c("aut", "cre")), person("Jochen", "Fiedler", email = "jochen.fiedler@itwm.fraunhofer.de", role = c("aut")))
+Description: Providing functionalities for calculating dependence measures based on distance correlation
+Depends: R (>= 3.3.3),  RcppArmadillo, Rfast, RcppEigen, Rcpp (>= 0.11.0), ggplot2
+Imports: 
+LinkingTo: RcppArmadillo, Rcpp, RcppEigen, 
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1
+NeedsCompilation: yes
+Packaged: 2018-10-02 09:30:57 UTC; fiedler
+Author: Dominic Edelmann [aut, cre],
+  Jochen Fiedler [aut]
+Maintainer: Dominic Edelmann <dominic.edelmann@dkfz-heidelberg.de>
