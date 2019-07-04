@@ -55,6 +55,7 @@ dcovterms.fast <- function(X, Y = NULL, n, calc.dvar = FALSE, calc.dcor = FALSE,
   Y <- as.numeric(Y)
   
   temp <- IX <- IY <- IY.s <- 1:n
+  #
   
   IX0 <- Rfast::Order(X)
   X.sort.X <- X[IX0]
