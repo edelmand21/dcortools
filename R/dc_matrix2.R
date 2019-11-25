@@ -26,26 +26,92 @@ dcmatrix <- function (X,
                       Y = NULL,
                       calc.dcov = TRUE,
                       calc.dcor = TRUE,
-                      calc.cor = "pearson",
+                      calc.cor = "none",
                       calc.pval.cor = FALSE,
                       return.data = TRUE,
                       test = "none",
                       adjustp = "none",
                       b = 499,
                       affine = FALSE,
-                      bias.corr = TRUE,
+                      standardize = FALSE,
+                      bias.corr = FALSE,
                       group.X = NULL,
                       group.Y = NULL,
                       metr.X = "euclidean",
                       metr.Y = "euclidean",
                       use="everything",
                       algorithm ="auto",
-                      fc.discrete = FALSE) {
+                      fc.discrete = FALSE,
+                      calc.dcor.pw = FALSE,
+                      calc.dcov.pw = FALSE,
+                      test.pw = "none",
+                      metr.pw.X = "euclidean",
+                      metr.pw.Y = "euclidean"
+                      ) {
   
-  ## Checks
-  
-  output <- list()
+  output <- .dcmatrixmain(X, Y, calc.dcov, calc.dcor, calc.cor, calc.pval.cor, return.data, test, adjustp, b, affine, standardize, bias.corr, group.X, group.Y, metr.X, metr.Y, use, algorithm, fc.discrete)
   output$call <- match.call()
+  
+  if (calc.dcor.pw | calc.dcov.pw | test.pw != "none") {
+    output2 <- .dcmatrixmain(X, Y, calc.dcov = calc.dcov.pw, calc.cor = "no", calc.dcor = calc.dcor.pw, calc.pval.cor = FALSE, return.data, test = test.pw, adjustp, b, affine, standardize, bias.corr, group.X = NULL, group.Y = NULL, metr.X = metr.pw.X, metr.Y = metr.pw.Y, use, algorithm, fc.discrete)
+    output$dcor.pw <- output2$dcor
+    output$dcov.pw <- output2$dcov
+    output$pvalue.pw <- output2$pvalue
+    output$metr.pw.X <- metr.pw.X
+    output$metr.pw.Y <- metr.pw.Y
+    output$dX.pw <-  output2$dX
+    output$dY.pw <-  output2$dY
+    names.X <- names.Y <- colnames(X)
+    if (!is.null(Y))
+      names.Y <- colnames(Y)
+    if (!is.null(output$dcor.pw)) {
+      rownames(output$dcor.pw) <- names.X
+      colnames(output$dcor.pw) <- names.Y
+    }
+    if (!is.null(output$dcov.pw)) {
+      rownames(output$dcov.pw) <- names.X
+      colnames(output$dcov.pw) <- names.Y
+    }
+    
+    if (!is.null(output$pvalue.pw)) {
+      rownames(output$pvalue.pw) <- names.X
+      colnames(output$pvalue.pw) <- names.Y
+    }
+    
+    
+  }
+  
+  output$test.pw <- test.pw
+  output$calc.dcor.pw <- calc.dcor.pw
+  output$calc.dcov.pw <- calc.dcov.pw
+  
+  return(output)
+  
+}
+
+
+.dcmatrixmain <- function (X,
+                           Y = NULL,
+                           calc.dcov = TRUE,
+                           calc.dcor = TRUE,
+                           calc.cor = "none",
+                           calc.pval.cor = FALSE,
+                           return.data = TRUE,
+                           test = "none",
+                           adjustp = "none",
+                           b = 499,
+                           affine = FALSE,
+                           standardize=FALSE,
+                           bias.corr = FALSE,
+                           group.X = NULL,
+                           group.Y = NULL,
+                           metr.X = "euclidean",
+                           metr.Y = "euclidean",
+                           use="everything",
+                           algorithm ="auto",
+                           fc.discrete = FALSE) {
+  output <- list()
+  
   
   if(return.data) {
     output$X <- X
@@ -56,7 +122,7 @@ dcmatrix <- function (X,
   
   
   withY <- ifelse(is.null(Y), FALSE, TRUE)
- 
+  
   
   dogamma <- docons <- dobb3 <- doperm <- donotest <- FALSE
   
@@ -92,7 +158,7 @@ dcmatrix <- function (X,
     stop("use must be one of \"everything\", \"complete.obs\" or \"pairwise.complete.obs\"")
   }
   
-
+  
   
   
   if (is.vector(X)) {
@@ -104,16 +170,30 @@ dcmatrix <- function (X,
   
   if (is.null(group.X)) {
     group.X <- 1:p
-  }
+  } 
   
-  tblX <- table(group.X)
-  labelsX <- as.factor(names(tblX))
-  pX <- as.numeric(tblX)
-  dX <- dY <- length(pX)
+  names.X <- names.Y <-  unique(group.X)
+  dX <- dY <- length(unique(group.X))
   ms.grpX <- ms.grpY <- NULL
-  grouplistsX <- lapply(1:dX, function(t) which(group.X == labelsX[t]))
+  groupslistX <- lapply(1:dX, function(t) which(group.X == names.X[t]))
+  pX <- sapply(1:dX, function(t) length(groupslistX[[t]]))
   prepX <- as.list(rep(NA,dX))
   dvarX <- rep(NA,dX)
+    
+    
+  # 
+  # tblX <- table(group.X)
+  # labelsX <- names.X <- names.Y <- as.factor(names(tblX))
+  # #if (sum(group.X - 1:p) == 0)
+  #  # names.X <- names.Y <- colnames(X)
+  # pX <- as.numeric(tblX)
+  # dX <- dY <- length(pX)
+  # ms.grpX <- ms.grpY <- NULL
+  # groupslistX <- lapply(1:dX, function(t) which(group.X == labelsX[t]))
+  #prepX <- as.list(rep(NA,dX))
+  #dvarX <- rep(NA,dX)
+  
+
   
   lmX <- length(metr.X)
   if (lmX ==1) {
@@ -142,21 +222,30 @@ dcmatrix <- function (X,
   if (affine) {
     for (j in 1 : dX) {
       if (use.all) {
-        X[,grouplistsX[[j]]] <- normalize.sample(X[,grouplistsX[[j]]], n, pX[j])
+        X[,groupslistX[[j]]] <- normalize.sample(X[,groupslistX[[j]]], n, pX[j])
       } else {
-        cc <- complete.cases(X[,grouplistsX[[j]]])
+        cc <- complete.cases(X[,groupslistX[[j]]])
         ncc <- length(cc)
-        X[cc,grouplistsX[[j]]] <- normalize.sample(X[cc,grouplistsX[[j]]], n, pX[j])
+        X[cc,groupslistX[[j]]] <- normalize.sample(X[cc,groupslistX[[j]]], n, pX[j])
       }
+    }
+  } else if (standardize) {
+    if (use.all) {
+      X[,groupslistX[[j]]] <- scale.sample(X[,groupslistX[[j]]], n, pX[j])
+    } else {
+      cc <- complete.cases(X[,groupslistX[[j]]])
+      ncc <- length(cc)
+      X[cc,groupslistX[[j]]] <- scale.sample(X[cc,groupslistX[[j]]], n, pX[j])
     }
   }
   
-
+  
+  
   
   if (withY) {
     
     lmY <- length(metr.Y)
-   
+    
     
     if (is.vector(Y)) {
       Y <- as.matrix(Y)
@@ -164,18 +253,28 @@ dcmatrix <- function (X,
     
     q <- ncol(Y)
     m <- nrow(Y)
-   
-     if (is.null(group.Y)) {
+    
+    if (is.null(group.Y)) {
       group.Y <- 1 : q
     }
+   #   names.Y <- colnames(Y)
+   # } else 
+   #   names.Y <- unique(group.Y)
     
-    tblY <- table(group.Y)
-    labelsY <- as.factor(names(tblY))
-    pY <- as.numeric(tblY)
-    dY <- length(pY)
-    grouplistsY <- lapply(1:dY, function(t) which(group.Y == labelsY[t]))
+    names.Y <- unique(group.Y)
+    dY <- length(unique(group.X))
+    groupslistY <- lapply(1:dY, function(t) which(group.Y == names.Y[t]))
+    pY <- sapply(1:dY, function(t) length(groupslistY[[t]]))
     prepY <- as.list(rep(NA,dY))
     dvarY <- rep(NA,dY)
+    
+    #tblY <- table(group.Y)
+    #labelsY <- as.factor(names(tblY))
+    #pY <- as.numeric(tblY)
+    #dY <- length(pY)
+    #groupslistY <- lapply(1:dY, function(t) which(group.Y == labelsY[t]))
+    #prepY <- as.list(rep(NA,dY))
+    #dvarY <- rep(NA,dY)
     if (use.all) {
       ms.Y <- sapply(1:dY, function(t) any(!complete.cases(Y[,t])))
       ms.grpY <- which(sapply(1:dY, function(t) any(!complete.cases(Y[,t]))))
@@ -197,31 +296,39 @@ dcmatrix <- function (X,
       if (ischar)
         metr.Y <- as.list(metr.Y)
     }
-   
-     if (m != n) 
+    
+    if (m != n) 
       stop("X and Y must have same number of rows (samples)")
     
     if (affine) {
       for (j in 1 : dY) {
         if (use.all) {
-          Y[,grouplistsY[[j]]] <- normalize.sample(Y[,grouplistsY[[j]]], n, pY[j])
+          Y[,groupslistY[[j]]] <- normalize.sample(Y[,groupslistY[[j]]], n, pY[j])
         } else {
-          cc <- complete.cases(Y[,grouplistsY[[j]]])
+          cc <- complete.cases(Y[,groupslistY[[j]]])
           ncc <- length(cc)
-          Y[cc,grouplistsX[[j]]] <- normalize.sample(Y[cc,grouplistsX[[j]]], ncc, pY[j])
+          Y[cc,groupslistX[[j]]] <- normalize.sample(Y[cc,groupslistX[[j]]], ncc, pY[j])
         }
       }
+    } else if (standardize) {
+      if (use.all) {
+        Y[,groupslistY[[j]]] <- scale.sample(Y[,groupslistY[[j]]], n, pY[j])
+      } else {
+        cc <- complete.cases(X[,groupslistX[[j]]])
+        ncc <- length(cc)
+        Y[cc,groupslistY[[j]]] <- scale.sample(Y[cc,groupslistY[[j]]], n, pY[j])
+      }
     }
- 
+    
   }
   
-
+  
   
   
   if (algorithm == "auto") {
-    gofast <- (p == length(group.X)) * (n>200) & (!dobb3) * all(metr.X %in% c("euclidean", "discrete"))
+    gofast <- (((p == length(names.X))) * (n>200)) & (!dobb3) * all(metr.X %in% c("euclidean", "discrete"))
     if (withY) 
-      gofast <- gofast * (q == length(group.Y)) * all(metr.Y %in% c("euclidean", "discrete"))
+      gofast <- gofast * (q == length(names.Y)) * all(metr.Y %in% c("euclidean", "discrete"))
     if (gofast) {
       algorithm <- "fast"
     } else {
@@ -235,16 +342,15 @@ dcmatrix <- function (X,
     alg.fast <- TRUE 
     if (doperm) 
       terms.smp <- function(terms, smp) {sampleterms.fast.matr(terms, smp)}
-    } else if (algorithm == "standard") {
+  } else if (algorithm == "standard") {
     alg.standard <- TRUE
     if (doperm) 
       terms.smp <- function(terms, smp, ndisc = NULL) {sampleterms.standard(terms, smp)}
-    }  else if (algorithm == "memsave") {
+  }  else if (algorithm == "memsave") {
     alg.memsave <- TRUE
     if (doperm) 
       terms.smp <- function(terms, smp, ndisc = NULL) {sampleterms.memsave(terms, smp)}
-  } 
-  else
+  } else
     stop ("Algorithm must be one of \"fast\", \"standard\", \"memsave\" or \"auto\"")
   
   
@@ -302,7 +408,7 @@ dcmatrix <- function (X,
         terms.sample <- terms.smp(terms,smp[[t]])
         return(termstodcov2(terms.sample$aijbij, terms.sample$Sab, Tab, n))
       })
-      pval <- (1 + length(which(reps > dcov2))) / (1 + b)
+      pval <- (1 + length(which(reps >= dcov2))) / (1 + b)
       return(pval)
     }
   } else if (docons) {
@@ -316,8 +422,7 @@ dcmatrix <- function (X,
       pval <- pchisq(stat * sqrt(2) / sqrt(est.var), df = 1 / alpha, lower.tail = FALSE)  
       return(pval)
     }
-  } 
-  else if (dobb3) {
+  } else if (dobb3) {
     testfunc <- function(terms, moms.X, moms.Y,...) {
       n <- terms$ncc
       est.m2 <- sum((moms.X$vc * moms.Y$vc)) / n ^ 10
@@ -350,16 +455,16 @@ dcmatrix <- function (X,
   
   extendoutput <- doperm| ((dobb3|docons)*use.pw)
   
-
+  
   
   if (fc.discrete) {
     for (j in 1:dX) {
-      if (is.factor(X[,grouplistsX[[j]]]))
+      if (is.factor(X[,groupslistX[[j]]]) | is.character(X[,groupslistX[[j]]]))
         metr.X[[j]] <- "discrete"
     }
     if (withY) {
       for (j in 1:dY) {
-        if (is.factor(Y[,grouplistsY[[j]]]))
+        if (is.factor(Y[,groupslistY[[j]]]) | is.character(X[,groupslistX[[j]]]))
           metr.Y[[j]] <- "discrete"
       }
     }
@@ -375,14 +480,14 @@ dcmatrix <- function (X,
           corrp <- Hmisc::rcorr(X, type = calc.cor)
           output$pval.cor <- corrp$P
           diag(output$pval.cor) <- 0
-           if (use.all)
+          if (use.all)
             output$pval.cor[which(corrp$n<n,arr.ind=TRUE)] <- NA
-       } else {
+        } else {
           corrp <- Hmisc::rcorr(X,Y)
           output$pval.cor <- corrp$P[1:dX,(dX+1):(dX+dY)]
           if (use.all)
             output$pval.cor[which(corrp$n[1:dX,(dX+1):(dX+dY)]<n,arr.ind=TRUE)] <- NA
-       }  
+        }  
       } else 
         warning("P-Value calculation for Kendall correlation not implemented")
     }
@@ -397,18 +502,25 @@ dcmatrix <- function (X,
   }
   
   
- 
-  if (calc.dcov)
+  
+  if (calc.dcov) {
     output$dcov <- matrix(nrow = dX, ncol = dY)
+    rownames(output$dcov) <- names.X
+    colnames(output$dcov) <- names.Y
+  }
   
   if (calc.dcor) {
     output$dcor <- matrix(nrow = dX, ncol = dY)
+    rownames(output$dcor) <- names.X
+    colnames(output$dcor) <- names.Y
     if (!withY)
       diag(output$dcor) <- 1
   }
   
   if (!donotest) {
     output$pvalue <- matrix(nrow = dX, ncol = dY)
+    rownames(output$pvalue) <- names.X
+    colnames(output$pvalue) <- names.Y
     if (!withY)
       diag(output$pvalue) <- 0
   }
@@ -421,15 +533,15 @@ dcmatrix <- function (X,
       momsY <- as.list(rep(NA,dY))
   }
   
-
+  
   
   for (j in setdiff(1:dX,ms.grpX)) {
     if (alg.fast) {
       prepX[[j]] <- prep.fast(X[,j], n, discrete = discrete.X[j], pairwise = use.pw)
     } else if (alg.memsave) {
-      prepX[[j]] <- prep.memsave(X[,grouplistsX[[j]]], n, pX[j],  metr.X = metr.X[[j]], pairwise = use.pw)
+      prepX[[j]] <- prep.memsave(X[,groupslistX[[j]]], n, pX[j],  metr.X = metr.X[[j]], pairwise = use.pw)
     } else if (alg.standard) {
-      prepX[[j]] <- prep.standard(X[,grouplistsX[[j]]], n, pX[j],  metr.X = metr.X[[j]], pairwise = use.pw)
+      prepX[[j]] <- prep.standard(X[,groupslistX[[j]]], n, pX[j],  metr.X = metr.X[[j]], pairwise = use.pw)
     }  
     
     Saa <- vector_prod_sum(prepX[[j]]$aidot,prepX[[j]]$aidot)
@@ -449,9 +561,9 @@ dcmatrix <- function (X,
       if (alg.fast) {
         prepY[[j]] <- prep.fast(Y[,j], n, discrete = discrete.Y[j], pairwise = use.pw)
       } else if (alg.memsave) {
-        prepY[[j]] <- prep.memsave(Y[,grouplistsY[[j]]], n, pY[j], metr.X = metr.Y[[j]], pairwise = use.pw)
+        prepY[[j]] <- prep.memsave(Y[,groupslistY[[j]]], n, pY[j], metr.X = metr.Y[[j]], pairwise = use.pw)
       } else if (alg.standard) {
-        prepY[[j]] <- prep.standard(Y[,grouplistsY[[j]]], n, pY[j], metr.X = metr.Y[[j]], pairwise = use.pw)
+        prepY[[j]] <- prep.standard(Y[,groupslistY[[j]]], n, pY[j], metr.X = metr.Y[[j]], pairwise = use.pw)
       }  
       Sbb <- vector_prod_sum(prepY[[j]]$aidot, prepY[[j]]$aidot)
       
@@ -462,7 +574,7 @@ dcmatrix <- function (X,
     }
   }
   
-
+  
   if (!withY) {
     if (dX > 1) {
       for (i in setdiff(1:(dX-1),ms.grpX)) {
@@ -497,15 +609,15 @@ dcmatrix <- function (X,
               moms.Y <- momsX[[j]]
             }
           }
-        
           
-        
-        output$dcor[i,j] <- output$dcor[j,i] <- dcov2todcor(dcov2 = dcov2XY, dvX, dvY)
-        
-        
-        
-        output$pvalue[i,j] <- output$pvalue[j,i] <- testfunc(dcov2 = dcov2XY, terms = terms, moms.X = moms.X, moms.Y = moms.Y, n = n, smp = perms, prepX[[i]], prepX[[j]])
-      }
+          
+          
+          output$dcor[i,j] <- output$dcor[j,i] <- dcov2todcor(dcov2 = dcov2XY, dvX, dvY)
+          
+          
+          
+          output$pvalue[i,j] <- output$pvalue[j,i] <- testfunc(dcov2 = dcov2XY, terms = terms, moms.X = moms.X, moms.Y = moms.Y, n = n, smp = perms, prepX[[i]], prepX[[j]])
+        }
       }
     }
   } else {
@@ -517,7 +629,7 @@ dcmatrix <- function (X,
           terms <- preptoterms.memsave(prepX[[i]], prepY[[j]], metr.X[[i]], metr.Y[[j]], n, pairwise = use.pw, perm = extendoutput) 
         } else if (alg.standard) {
           terms <- preptoterms.standard(prepX[[i]], prepY[[j]], n, pairwise = use.pw, perm = extendoutput)
-            }  
+        }  
         dcov2XY <- termstodcov2(terms$aijbij, vector_prod_sum(terms$aidot, terms$bidot), terms$adotdot * terms$bdotdot, terms$ncc)
         output$dcov[i,j] <- dcov2todcov(dcov2 = dcov2XY)
         if (use.pw) {
@@ -542,22 +654,22 @@ dcmatrix <- function (X,
         }
         output$dcor[i,j] <- dcov2todcor(dcov2 = dcov2XY, dvX, dvY)
         
-      
+        
         output$pvalue[i,j] <- testfunc(dcov2 = dcov2XY, terms = terms, moms.X = moms.X, moms.Y = moms.Y, smp = perms, prepX[[i]], prepY[[j]])
       }
     }
   }
-
-
-
-
-
+  
+  
+  
+  
+  
   if (adjustp %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr")) {
     if (withY) {
-      output$adj.pvalues <- matrix(p.adjust(output$pvalues,method = adjustp), ncol = q)
+      output$adj.pvalues <- matrix(p.adjust(output$pvalue,method = adjustp), ncol = q)
     } else {
-      ind <- which(lower.tri(output$pvalues), arr.ind=TRUE)
-      pvec <- as.vector(output$pvalues[ind])
+      ind <- which(lower.tri(output$pvalue), arr.ind=TRUE)
+      pvec <- as.vector(output$pvalue[ind])
       pvec <- p.adjust(pvec, method = adjustp)
       output$adj.pvalues <- diag(0,p)
       ind2 <- ind[,2:1]
@@ -565,13 +677,11 @@ dcmatrix <- function (X,
     }  
   } else if (adjustp != "none")
     warning ("adjustp should be one of \"holm\", \"hochberg\", \"hommel\", \"bonferroni\", \"BH\", \"BY\", \"fdr\" \n
-             No p-value correction performed")
- 
-  class(output) <- "dcmatrix"
+               No p-value correction performed")
   
+  class(output) <- "dcmatrix"
   output$withY <- withY
   output$dX <- dX
-  output$dY <- dY
   output$n <- n
   output$b <- b
   output$test <- test
@@ -580,9 +690,17 @@ dcmatrix <- function (X,
   output$bias.corr <- bias.corr
   output$affine <- affine
   output$calc.cor <- calc.cor
+  output$group.X  <-  group.X
+  output$names.X <-  names.X
+  output$groupslistX <-  groupslistX
+  
+  if (withY) {
+    output$group.Y <- group.Y
+    output$dY <- dY
+    output$names.Y <- names.Y
+    output$groupslistY <- output$groupslistY
+  } 
   
   return(output)
-  
- 
-  
+
 }

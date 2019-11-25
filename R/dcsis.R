@@ -1,4 +1,4 @@
-#' Calculates distance covariance and distance correlation matrices
+#' Performs Distance correlation Sure Independence Screening (DC-SIS)
 #'
 #' @param X A dataframe or matrix with n rows and p columns.
 #' @param Y A vector-valued response of length n
@@ -28,12 +28,15 @@ dcsis <- function(X,
                   test = "none",
                   adjustp = "none",
                   b = 499,
-                  bias.corr = TRUE,
+                  bias.corr = FALSE,
                   use="everything",
                   algorithm ="auto") {
   
   p <- ncol(X)
   q <- ncol(Y)
+  
+  if (is.null(q))
+    q <- 1
   
   if (k  < 0) {
     stop("k must be positive")

@@ -1,4 +1,43 @@
 
+#' Calculate the double-centered distance matrix of a given vector and a given metric.
+#'
+#' @param X a numeric vector or a numeric matrix.
+#' @param metr.X metric that should be used to compute the distance matrix.
+#' @param n number of samples, i.e. the number of rows of X..
+#' @param p number of repetitions, i.e. the number of columns of X.
+#' @param ... additional parameters that are used for other metrics (e.g., the bandwidth for Gaussian kernels)
+#' @details For metr.X the following metrices are built in: euclidean, gaussian and discrete. However,
+#' it is possible to use a function taking two numerical arguments as metr.X.
+#'
+#' @return The distance matrix corresponding to X.
+#' @export
+centmat <- function(X,
+                    metr.X = "euclidean",
+                    p) {
+  
+  distX <- distmat(X, metr.X, p)
+  return(doublecent(distX))
+}
+
+
+
+#' Double-centers a matrix.
+#'
+#' @distX A numeric matrix to center.
+#' @return The distance matrix corresponding to X.
+#' @export
+doublecent <- function(distX) {
+  n <- nrow(distX)
+  rm <- Rfast::rowmeans(distX)
+  totm <- mean(rm)
+  rmmat <- matrix(rep(rm,n), ncol=n)
+  centmat <- distX - rmmat - t(rmmat) + totm
+  return(centmat)
+}
+
+
+
+
 #' Calculate the distance matrix of a given vector and a given metric.
 #'
 #' @param X a numeric vector or a numeric matrix.
@@ -23,6 +62,10 @@ distmat <- function(X,
         distX <- Rfast::vecdist(X)
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::vecdist(X) ^ 2)
+      } else if (metr.X == "gaussauto") {
+        preX <- Rfast::vecdist(X)
+        bw <- median(preX)
+        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::vecdist(X) 
         distX <- (distX ^ 2) / (1 + distX ^ 2)
@@ -40,6 +83,10 @@ distmat <- function(X,
         distX <- Rfast::Dist(X)
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::Dist(X) ^ 2)
+      } else if (metr.X == "gaussauto") {
+        preX <- Rfast::Dist(X)
+        bw <- median(preX)
+        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::Dist(X) 
         distX <- (distX ^ 2) / (1 + distX ^ 2)
@@ -61,6 +108,10 @@ distmat <- function(X,
         distX <- Rfast::vecdist(X) ^ prm
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::vecdist(X) ^ 2 / prm)
+      } else if (metr.X == "gaussauto") {
+        preX <- Rfast::vecdist(X)
+        bw <- median(preX) * prm
+        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::vecdist(X) 
         distX <- (distX ^ 2) / (prm ^ 2 + distX ^ 2)
@@ -78,6 +129,10 @@ distmat <- function(X,
         distX <- Rfast::Dist(X) ^ prm
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::Dist(X) ^ 2 / prm)
+      } else if (metr.X == "gaussauto") {
+        preX <- Rfast::Dist(X)
+        bw <- median(preX) * prm
+        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::Dist(X) 
         distX <- (distX ^ 2) / (prm ^ 2 + distX ^ 2)
@@ -101,7 +156,7 @@ distmat <- function(X,
 kerntodist <- function(kernmat) {
   n <- ncol(kernmat)
   dmat <- matrix(rep(diag(kernmat), n), ncol = n)
-  return((dmat + t(dmat) - 2 * kernmat))
+  return((dmat + t(dmat) - 2 * kernmat) / 2)
 }
 
 
@@ -119,11 +174,11 @@ extract_np <- function(X, type.X) {
     {
       n <- length(X)
       p <- 1L
-    } else if (is.matrix(X)) {
+    } else if (is.matrix(X) | is.data.frame(X)) {
       n <- nrow(X)
       p <- ncol(X)
     } else {
-      stop("X must be a vector or matrix for type 'sample'!")
+      stop("X must be a vector, matrix or dataframe for type 'sample'!")
     }
   } else if (type.X == "distance") {
     if (is.matrix(X)) {
@@ -160,5 +215,24 @@ normalize.sample <- function(X, n, p) {
   } else {
     X <- X / sd(X)
   }
+}
+
+
+scale.sample <- function(X, n, p) {
+  if (p > 1) {
+    X <- standardise(X, center = FALSE)
+  } else {
+    X <- X / sd(X)
+  }
+}
+
+mroot <- function(A) {
+  e <- eigen(A)
+  V <- e$vectors
+  V %*% diag(e$values) %*% t(V)
+  
+  
+  B <- V %*% diag(sqrt(e$values)) %*% t(V)
+  return(B)
 }
 

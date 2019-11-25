@@ -21,6 +21,20 @@ print.dcmatrix <- function(dcmat) {
     else if (dcmat$test == "bb3")
     testout <- "Three moment approximation by Berschneider and Boettcher"
     
+    
+    if (dcmat$test.pw == "none")
+      testout.pw <- "None"
+    else if (dcmat$test.pw == "permutation")
+      testout.pw  <- paste("Permutation test with ",dcmat$b," permutations")
+    else if (dcmat$test.pw == "gamma")
+      testout.pw  <- "Simple gamma approximation"               
+    else if (dcmat$test.pw == "conservative")
+      testout.pw  <- "Conservative two-moment approximation"  
+    else if (dcmat$test.pw == "bb3")
+      testout.pw  <- "Three moment approximation by Berschneider and Boettcher"
+    
+    pw <- (dcmat$test.pw != "none") | dcmat$calc.dcor.pw | dcmat$calc.dcov.pw
+    
     if (dcmat$calc.cor == "pearson")
       corout <- "Pearson"
     else if (dcmat$calc.cor == "spearman")
@@ -30,266 +44,325 @@ print.dcmatrix <- function(dcmat) {
     else 
     corout <- "None"     
     
+  dX <- dY <- dcmat$dX
+  dX.pw <- dY.pw <- dcmat$dX.pw
     
-  
-  cat(paste("dcmatrix object of size",dcmat$dX, "x", dcmat$dY, "\n"))
+  if (dcmat$withY) {  
+    dY.pw <- dcmat$dY.pw
+    dY <- dcmat$dY
+  }
+  cat(paste("dcmatrix object of size", dX, "x", dY, "\n"))
   cat("\n")
   cat("Call:", "\n")
   cat(paste(deparse(dcmat$call), "\n"))
-  cat("Call:", "\n")
-    cat(paste("Distance correlation matrix: ", ifelse(dcmat$calc.dcor,"Available \n", "Not available \n")) )
+  cat("\n")
+  cat(paste("Distance correlation matrix: ", ifelse(dcmat$calc.dcor,"Available \n", "Not available \n")) )
   cat(paste("Distance covariance matrix: ", ifelse(dcmat$calc.dcov,"Available \n", "Not available \n")) )
   cat(paste("Bias correction: ", ifelse(dcmat$bias.corr,"Yes \n", "No \n")) )
   cat(paste("Affinely invariant: ", ifelse(dcmat$affine,"Yes \n", "No \n")) )
   cat(paste("Test: ", testout, "\n") )
-  cat(paste("Standard correlation matrix: ", corout) )
-  
+  cat(paste("Standard correlation matrix: ", corout, "\n"))
+  if (pw) {
+    cat("\n")
+    cat("Pairwise results:\n")
+    cat("\n")
+    cat(paste("Size:", dX.pw, "x", dY.pw, "\n"))
+    cat("\n")
+    cat(paste("Distance correlation matrix: ", ifelse(dcmat$calc.dcor.pw,"Available \n", "Not available \n")) )
+    cat(paste("Distance covariance matrix: ", ifelse(dcmat$calc.dcov.pw,"Available \n", "Not available \n")) )
+    cat(paste("Test: ", testout.pw, "\n") )
+  }
 }
 
+#' @export
+plot.dcmatrix <- function(dcmat, type = "dcor", cluster_rows = FALSE, cluster_cols = FALSE, display_numbers=TRUE, ...) {
+  
+  if (type =="dcor") {
+    mat <- dcmat$dcor 
+  } else if (type == "dcov") {
+    mat <- dcmat$dcov 
+  } else if (type == "logp") {
+    mat <- -log10(dcmat$pvalue)
+  } else if (type == "cor") {
+    mat <- dcmat$cor
+  } else if (type == "logp.cor") {
+    mat <- -log10(dcmat$pval.cor)
+  } else if (type == "dcor.pw") {
+    mat <- dcmat$dcor.pw 
+  } else if (type == "dcov.pw") {
+    mat <- dcmat$dcov.pw 
+  } else if (type == "logp.pw") {
+    mat <- -log10(dcmat$pvalue.pw)
+  } 
+
+  pheatmap(mat, cluster_rows = cluster_rows, cluster_cols = cluster_cols, display_numbers= display_numbers, ...)
+
+}
 
 #' @export
-plot.dcmatrix <- function(dcmat, maxcomp = 1e5, diff = 0.1, col = "blue", alpha = 1, cortrafo = "gaussiandcor", ...) {
-  if (is.null(dcmat$corr) | is.null(dcmat$dcor)) 
+hsplot <- function(dcmat, maxcomp = 1e5, col = "blue", alpha = 1, cortrafo = "none") {
+  pw <- FALSE
+  
+  if (is.null(dcmat$corr) | is.null(dcmat$dcor))
     stop("Correlation and distance correlation matrix needed for plot!")
 
-  
-  if (!dcmat$withY) {  
-    corr <- c(as.dist(dcmat$corr))
-    dcor <- c(as.dist(dcmat$dcor))
-  } else {
-    corr <- c(dcmat$corr)
-    dcor <- c(dcmat$dcor)
+  if (anyDuplicated(dcmat$group.X)) {
+   pw <- TRUE
   }
   
-  xl <- "Correlation"
+  if (dcmat$withY) {
+    if (anyDuplicated(dcmat$group.Y)) {
+      pw <- TRUE
+    }
+  }
+    
   
+  
+
+  if (!dcmat$withY) {
+    corr <- c(as.dist(dcmat$corr))
+    if (pw)
+      dcor <- c(as.dist(dcmat$dcor.pw))
+    else
+      dcor <- c(as.dist(dcmat$dcor))
+  } else {
+    corr <- c(dcmat$corr)
+    if (pw)
+      dcor <- c(dcmat$dcor.pw)
+    else 
+      dcor <- c(dcmat$dcor)
+  }
+  
+  
+  
+  xl <- "Correlation"
+
   if (cortrafo == "gaussiandcor") {
     corr <- dcorgaussianbiv(corr)
     xl <- "Distance Correlation under asssumption of bivariate normal"
-  }  
-  
+  }
+
   if (length(corr) > maxcomp) {
     sel <- order(dcor-abs(corr), decreasing=TRUE)[1:maxcomp]
     warning("Not all comparisons plotted. Increase argument maxcomp to view all comparisons")
     dcor <- dcor[sel]
     corr <- corr[sel]
-  } 
-  intr <- (dcor-abs(corr) > diff)
-  print(ggplot() + geom_point(aes(corr,dcor, color =intr), alpha = alpha) + xlab(xl))
+  }
+  print(ggplot() + geom_point(aes(dcor,corr), alpha = alpha) + ylab(xl) + xlab("Distance Correlation"))
 }
 
-#' @export
-plotrelations <- function(dcmat, candidates = NULL, diff, smooth = "loess", cortrafo = "gaussiandcor", switchXY = FALSE, names = "nonlin", width = 480, height = 480, criterion = "dcor") {
-  if (is.null(dcmat$X)) {
-    stop("Data needed to plot interesting nonlinear associations! Run dcmatrix again or add data manually to dcmat object.")
-  } 
-  
-  X <- as.matrix(dcmat$X)
-  
-  if (dcmat$withY) 
-    Y <- as.matrix(dcmat$Y)
-  
-  if (criterion == "logp") {
-    if (is.null(dcmat$pvalue) | is.null(dcmat$pval.cor)) {
-      stop("P-values missing in dcmatrix object.")
-    } 
-    corr <- -log10(dcmat$pval.cor)
-    dcor <- -log10(dcmat$pvalue)
-  } else if (criterion == "dcor") {
-    if (is.null(dcmat$dcor) | is.null(dcmat$corr)) {
-      stop("Distance correlation or correlation missing in dcmatrix object.")
-    }
-    corr <- abs(dcmat$corr)
-    dcor <- dcmat$dcor
-  }
-
-  
-  if (!dcmat$withY) {  
-    lowtr <- lower.tri(corr)
-    corr[lowtr] <- NA
-    dcor[lowtr] <- NA
-    Y <- X
-  }
-  
-  if (cortrafo == "gaussiandcor") {
-    corr <- dcorgaussianbiv(corr)
-    xl <- "Distance Correlation under asssumption of bivariate normal"
-  }  
-  
-  if (is.null(candidates)) {
-    candidates <- which((dcor - corr) > diff, arr.ind=TRUE)
-  }
-  ncand <- nrow(candidates)
-  
-  
-  if (ncand<0.5) {
-    stop("No associations with specified difference between two tests/association measures found.")
-  }
-  
-  names.Y <- "Y"
-  
-  if (is.null(colnames(X)))
-    colnames(X) <- paste("X",1:ncol(X))
-  
-  
-  
-  
-  
-  if (!dcmat$withY) {  
-    Y <- X
-    names.Y <- "X"
-    if (switchXY) {
-      candidates <- cbind(candidates[,2],candidates[,1])
-    }
-  } else {
-    if (dcmat$withY) {
-      if (is.null(colnames(Y)))
-        colnames(Y) <- paste("Y",1:ncol(Y), sep = "")
-    }
-    if (switchXY) {
-      Xnew <- Y
-      Ynew <- X
-      X <- Xnew
-      Y <- Ynew
-      candidates <- cbind(candidates[,2],candidates[,1])
-    }
-  }
-  
-  
-  for (i in 1:ncand) {
-    name.X <- colnames(X)[candidates[i,1]]
-    name.Y <- colnames(Y)[candidates[i,2]]
-    
-    title <- paste("Association of ", name.X," with ", name.Y,sep="")
-    filename <- paste(names,"X-",name.X,"_Y-",name.Y,".png",sep="")
-    
-    png(filename, width = width, height = height)
-    plotobj <- ggplot()+ggtitle(title)+ xlab(name.X) + ylab(name.Y)
-    plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]]))
-    if (smooth != "none")
-      plotobj <- plotobj + geom_smooth(aes(X[,candidates[i,1]], Y[,candidates[i,2]]), method=smooth, se=F)  
-    print(plotobj)
-    dev.off()
-  }
-}
-
-#' @export
-extract.nonlins <- function(dcmat, diff, criterion = "dcor") {
-  if (is.null(dcmat$X)) {
-    stop("Data needed to plot interesting nonlinear associations! Run dcmatrix again or add data manually to dcmat object.")
-  } 
-  
-  if (criterion == "logp") {
-    if (is.null(dcmat$pvalue) | is.null(dcmat$pval.cor)) {
-      stop("P-values missing in dcmatrix object.")
-    } 
-    corr <- -log10(dcmat$pval.cor)
-    dcor <- -log10(dcmat$pvalue)
-  } else if (criterion == "dcor") {
-    if (is.null(dcmat$dcor) | is.null(dcmat$corr)) {
-      stop("Distance correlation or correlation missing in dcmatrix object.")
-    }
-    corr <- abs(dcmat$corr)
-    dcor <- dcmat$dcor
-  }
-  
-  
-  if (!dcmat$withY) {  
-    lowtr <- lower.tri(corr)
-    corr[lowtr] <- NA
-    dcor[lowtr] <- NA
-    Y <- X
-  }
-  
-  selint <- which((dcor - corr) > diff, arr.ind=TRUE)
-  
-  return(selint)
- 
-}
-
-#' @export
-plotsubgr <- function(dcmat, candidates, data, cov.subgroup = names(data), splitnum = 3, method = "color", smooth = "lm", switchXY = FALSE, names = "plot", width = 480, height = 480) {
-
-  if (is.null(dcmat$X)) {
-    stop("Data needed to plot subgroup associations! Run dcmatrix again or add data manually to dcmat object.")
-  } 
-  
-  if ("X" %in% cov.subgroup | "Y" %in% cov.subgroup)  {
-    stop("Variable name X and Y not allowed in cov.subgroup. Please rename variables.")
-  } 
-  
-  
-  X <- as.matrix(dcmat$X)
-  if (dcmat$withY) 
-    Y <- as.matrix(dcmat$Y)
-  
-  if (length(candidates)==2)
-    candidates <- matrix(candidates,ncol=2)
-  
-  names.Y <- "Y"
-  
-  if (is.null(colnames(X)))
-    colnames(X) <- paste("X",1:ncol(X))
-  
-
-
-  
-  
-  if (!dcmat$withY) {  
-    Y <- X
-    names.Y <- "X"
-    if (switchXY) {
-      candidates <- cbind(candidates[,2],candidates[,1])
-    }
-  } else {
-    if (dcmat$withY) {
-      if (is.null(colnames(Y)))
-        colnames(Y) <- paste("Y",1:ncol(Y), sep = "")
-    }
-   if (switchXY) {
-      Xnew <- Y
-      Ynew <- X
-      X <- Xnew
-      Y <- Ynew
-      candidates <- cbind(candidates[,2],candidates[,1])
-    }
-  }
-  
-  nsubgr <- length(cov.subgroup)
-  
-  for (j in 1:nsubgr) {
-    if (is.numeric(data[,cov.subgroup[j]])) {
-      data[,cov.subgroup[j]] <- gtools::quantcut(data[,cov.subgroup[j]], q= splitnum)
-    }
-  }
-
-  
-
-  ncand <- nrow(candidates)
-  for (i in 1:ncand) {
-    for (j in 1:nsubgr) {
-      name.X <- colnames(X)[candidates[i,1]]
-      name.Y <- colnames(Y)[candidates[i,2]]
-      
-      title <- paste("Association of ", name.X," with ", name.Y, " in ",cov.subgroup[j]," subgroups",sep="")
-      filename <- paste(names,"X-",name.X,"_Y-",name.Y,"_subgroup",cov.subgroup[j],".png",sep="")
-      png(filename, width = width, height = height)
-      plotobj <- ggplot(data)+ggtitle(title)+ xlab(name.X) + ylab(name.Y)
-      
-      plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]], color = data[,cov.subgroup[j]]))
-      
-      if (method == "facet")
-        plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]])) + facet_grid(rows = vars(data[,cov.subgroup[j]]))
-      
-      if (smooth != "none")
-        plotobj <- plotobj + geom_smooth(aes(X[,candidates[i,1]], Y[,candidates[i,2]], group=data[,cov.subgroup[j]], color = data[,cov.subgroup[j]]), method=smooth, se=F)  
-      
-      print(plotobj)
-      
-      dev.off()
-    }
-  }
-  
-}
-
-is.dcmatrix <- function(x) inherits(x, "dcmatrix")
+#' #' @export
+#' plotrelations <- function(dcmat, candidates = NULL, diff, smooth = "loess", cortrafo = "gaussiandcor", switchXY = FALSE, names = "nonlin", width = 480, height = 480, criterion = "dcor") {
+#'   if (is.null(dcmat$X)) {
+#'     stop("Data needed to plot interesting nonlinear associations! Run dcmatrix again or add data manually to dcmat object.")
+#'   } 
+#'   
+#'   X <- as.matrix(dcmat$X)
+#'   
+#'   if (dcmat$withY) 
+#'     Y <- as.matrix(dcmat$Y)
+#'   
+#'   if (criterion == "logp") {
+#'     if (is.null(dcmat$pvalue) | is.null(dcmat$pval.cor)) {
+#'       stop("P-values missing in dcmatrix object.")
+#'     } 
+#'     corr <- -log10(dcmat$pval.cor)
+#'     dcor <- -log10(dcmat$pvalue)
+#'   } else if (criterion == "dcor") {
+#'     if (is.null(dcmat$dcor) | is.null(dcmat$corr)) {
+#'       stop("Distance correlation or correlation missing in dcmatrix object.")
+#'     }
+#'     corr <- abs(dcmat$corr)
+#'     dcor <- dcmat$dcor
+#'   }
+#' 
+#'   
+#'   if (!dcmat$withY) {  
+#'     lowtr <- lower.tri(corr)
+#'     corr[lowtr] <- NA
+#'     dcor[lowtr] <- NA
+#'     Y <- X
+#'   }
+#'   
+#'   if (cortrafo == "gaussiandcor") {
+#'     corr <- dcorgaussianbiv(corr)
+#'     xl <- "Distance Correlation under asssumption of bivariate normal"
+#'   }  
+#'   
+#'   if (is.null(candidates)) {
+#'     candidates <- which((dcor - corr) > diff, arr.ind=TRUE)
+#'   }
+#'   ncand <- nrow(candidates)
+#'   
+#'   
+#'   if (ncand<0.5) {
+#'     stop("No associations with specified difference between two tests/association measures found.")
+#'   }
+#'   
+#'   names.Y <- "Y"
+#'   
+#'   if (is.null(colnames(X)))
+#'     colnames(X) <- paste("X",1:ncol(X))
+#'   
+#'   
+#'   
+#'   
+#'   
+#'   if (!dcmat$withY) {  
+#'     Y <- X
+#'     names.Y <- "X"
+#'     if (switchXY) {
+#'       candidates <- cbind(candidates[,2],candidates[,1])
+#'     }
+#'   } else {
+#'     if (dcmat$withY) {
+#'       if (is.null(colnames(Y)))
+#'         colnames(Y) <- paste("Y",1:ncol(Y), sep = "")
+#'     }
+#'     if (switchXY) {
+#'       Xnew <- Y
+#'       Ynew <- X
+#'       X <- Xnew
+#'       Y <- Ynew
+#'       candidates <- cbind(candidates[,2],candidates[,1])
+#'     }
+#'   }
+#'   
+#'   
+#'   for (i in 1:ncand) {
+#'     name.X <- colnames(X)[candidates[i,1]]
+#'     name.Y <- colnames(Y)[candidates[i,2]]
+#'     
+#'     title <- paste("Association of ", name.X," with ", name.Y,sep="")
+#'     filename <- paste(names,"X-",name.X,"_Y-",name.Y,".png",sep="")
+#'     
+#'     png(filename, width = width, height = height)
+#'     plotobj <- ggplot()+ggtitle(title)+ xlab(name.X) + ylab(name.Y)
+#'     plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]]))
+#'     if (smooth != "none")
+#'       plotobj <- plotobj + geom_smooth(aes(X[,candidates[i,1]], Y[,candidates[i,2]]), method=smooth, se=F)  
+#'     print(plotobj)
+#'     dev.off()
+#'   }
+#' }
+#' 
+#' #' @export
+#' extract.nonlins <- function(dcmat, diff, criterion = "dcor") {
+#'   if (is.null(dcmat$X)) {
+#'     stop("Data needed to plot interesting nonlinear associations! Run dcmatrix again or add data manually to dcmat object.")
+#'   } 
+#'   
+#'   if (criterion == "logp") {
+#'     if (is.null(dcmat$pvalue) | is.null(dcmat$pval.cor)) {
+#'       stop("P-values missing in dcmatrix object.")
+#'     } 
+#'     corr <- -log10(dcmat$pval.cor)
+#'     dcor <- -log10(dcmat$pvalue)
+#'   } else if (criterion == "dcor") {
+#'     if (is.null(dcmat$dcor) | is.null(dcmat$corr)) {
+#'       stop("Distance correlation or correlation missing in dcmatrix object.")
+#'     }
+#'     corr <- abs(dcmat$corr)
+#'     dcor <- dcmat$dcor
+#'   }
+#'   
+#'   
+#'   if (!dcmat$withY) {  
+#'     lowtr <- lower.tri(corr)
+#'     corr[lowtr] <- NA
+#'     dcor[lowtr] <- NA
+#'     Y <- X
+#'   }
+#'   
+#'   selint <- which((dcor - corr) > diff, arr.ind=TRUE)
+#'   
+#'   return(selint)
+#'  
+#' }
+#' 
+#' #' @export
+#' plotsubgr <- function(dcmat, candidates, data, cov.subgroup = names(data), splitnum = 3, method = "color", smooth = "lm", switchXY = FALSE, names = "plot", width = 480, height = 480) {
+#' 
+#'   if (is.null(dcmat$X)) {
+#'     stop("Data needed to plot subgroup associations! Run dcmatrix again or add data manually to dcmat object.")
+#'   } 
+#'   
+#'   if ("X" %in% cov.subgroup | "Y" %in% cov.subgroup)  {
+#'     stop("Variable name X and Y not allowed in cov.subgroup. Please rename variables.")
+#'   } 
+#'   
+#'   
+#'   X <- as.matrix(dcmat$X)
+#'   if (dcmat$withY) 
+#'     Y <- as.matrix(dcmat$Y)
+#'   
+#'   if (length(candidates)==2)
+#'     candidates <- matrix(candidates,ncol=2)
+#'   
+#'   names.Y <- "Y"
+#'   
+#'   if (is.null(colnames(X)))
+#'     colnames(X) <- paste("X",1:ncol(X))
+#'   
+#' 
+#' 
+#'   
+#'   
+#'   if (!dcmat$withY) {  
+#'     Y <- X
+#'     names.Y <- "X"
+#'     if (switchXY) {
+#'       candidates <- cbind(candidates[,2],candidates[,1])
+#'     }
+#'   } else {
+#'     if (dcmat$withY) {
+#'       if (is.null(colnames(Y)))
+#'         colnames(Y) <- paste("Y",1:ncol(Y), sep = "")
+#'     }
+#'    if (switchXY) {
+#'       Xnew <- Y
+#'       Ynew <- X
+#'       X <- Xnew
+#'       Y <- Ynew
+#'       candidates <- cbind(candidates[,2],candidates[,1])
+#'     }
+#'   }
+#'   
+#'   nsubgr <- length(cov.subgroup)
+#'   
+#'   for (j in 1:nsubgr) {
+#'     if (is.numeric(data[,cov.subgroup[j]])) {
+#'       data[,cov.subgroup[j]] <- gtools::quantcut(data[,cov.subgroup[j]], q= splitnum)
+#'     }
+#'   }
+#' 
+#'   
+#' 
+#'   ncand <- nrow(candidates)
+#'   for (i in 1:ncand) {
+#'     for (j in 1:nsubgr) {
+#'       name.X <- colnames(X)[candidates[i,1]]
+#'       name.Y <- colnames(Y)[candidates[i,2]]
+#'       
+#'       title <- paste("Association of ", name.X," with ", name.Y, " in ",cov.subgroup[j]," subgroups",sep="")
+#'       filename <- paste(names,"X-",name.X,"_Y-",name.Y,"_subgroup",cov.subgroup[j],".png",sep="")
+#'       png(filename, width = width, height = height)
+#'       plotobj <- ggplot(data)+ggtitle(title)+ xlab(name.X) + ylab(name.Y)
+#'       
+#'       plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]], color = data[,cov.subgroup[j]]))
+#'       
+#'       if (method == "facet")
+#'         plotobj <- plotobj + geom_point(aes(X[,candidates[i,1]], Y[,candidates[i,2]])) + facet_grid(rows = vars(data[,cov.subgroup[j]]))
+#'       
+#'       if (smooth != "none")
+#'         plotobj <- plotobj + geom_smooth(aes(X[,candidates[i,1]], Y[,candidates[i,2]], group=data[,cov.subgroup[j]], color = data[,cov.subgroup[j]]), method=smooth, se=F)  
+#'       
+#'       print(plotobj)
+#'       
+#'       dev.off()
+#'     }
+#'   }
+#'   
+#' }
+#' 
+#' is.dcmatrix <- function(x) inherits(x, "dcmatrix")

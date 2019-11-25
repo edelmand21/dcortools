@@ -11,7 +11,11 @@ print.dctest <- function(dctest) {
     testout <- "Conservative two-moment approximation"  
   else if (dctest$method == "bb3")
     testout <- "Three moment approximation by Berschneider and Boettcher"
-
+  else if (dctest$method == "wildbs1")
+    testout <- "Wild bootstrap by Chwialkowksi, et al., Method 1"
+  else if (dctest$method == "wildbs2")
+    testout <- "Wild bootstrap by Chwialkowksi, et al., Method 2"
+  
   if (dctest$pvalue<1e-6)
     pvalout <- "< 1E-6"
   else

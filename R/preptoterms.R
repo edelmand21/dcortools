@@ -151,7 +151,7 @@ preptoterms.fast <- function(prepX, prepY, n, pairwise = use.pw, discreteX, disc
      
      terms$aidot <- Xdot + (2 * alphaX - ncc) * X.sort.X - 2 * betaX
      terms$adotdot <- sum(terms$aidot)
-     XXdot <- sum(Xcc^2)
+     XXdot <- sum(X^2)
      terms$aijaij <- 2 * ncc * XXdot - 2* Xdot^2
 
      nY <- table(Y)
