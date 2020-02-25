@@ -262,7 +262,7 @@ dcmatrix <- function (X,
    #   names.Y <- unique(group.Y)
     
     names.Y <- unique(group.Y)
-    dY <- length(unique(group.X))
+    dY <- length(unique(group.Y))
     groupslistY <- lapply(1:dY, function(t) which(group.Y == names.Y[t]))
     pY <- sapply(1:dY, function(t) length(groupslistY[[t]]))
     prepY <- as.list(rep(NA,dY))
