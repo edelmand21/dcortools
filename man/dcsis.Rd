@@ -2,12 +2,23 @@
 % Please edit documentation in R/dcsis.R
 \name{dcsis}
 \alias{dcsis}
-\title{Calculates distance covariance and distance correlation matrices}
+\title{Performs Distance correlation Sure Independence Screening (DC-SIS)}
 \usage{
-dcsis(X, Y, k = floor(nrow(X)/log(nrow(X))), threshold = NULL,
-  calc.cor = "spearman", calc.pval.cor = FALSE, return.data = FALSE,
-  test = "none", adjustp = "none", b = 499, bias.corr = TRUE,
-  use = "everything", algorithm = "auto")
+dcsis(
+  X,
+  Y,
+  k = floor(nrow(X)/log(nrow(X))),
+  threshold = NULL,
+  calc.cor = "spearman",
+  calc.pval.cor = FALSE,
+  return.data = FALSE,
+  test = "none",
+  adjustp = "none",
+  b = 499,
+  bias.corr = FALSE,
+  use = "everything",
+  algorithm = "auto"
+)
 }
 \arguments{
 \item{X}{A dataframe or matrix with n rows and p columns.}
@@ -42,5 +53,5 @@ dcsis(X, Y, k = floor(nrow(X)/log(nrow(X))), threshold = NULL,
 dcmatrix object
 }
 \description{
-Calculates distance covariance and distance correlation matrices
+Performs Distance correlation Sure Independence Screening (DC-SIS)
 }

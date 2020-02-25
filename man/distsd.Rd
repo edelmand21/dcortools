@@ -4,8 +4,16 @@
 \alias{distsd}
 \title{Calculates the distance standard deviation}
 \usage{
-distsd(X, affine = FALSE, bias.corr = TRUE, type.X = "sample",
-  metr.X = "euclidean", use = "all", algorithm = "auto")
+distsd(
+  X,
+  affine = FALSE,
+  standardize = FALSE,
+  bias.corr = FALSE,
+  type.X = "sample",
+  metr.X = "euclidean",
+  use = "all",
+  algorithm = "auto"
+)
 }
 \arguments{
 \item{X}{contains either the first sample or its corresponding distance matrix.
@@ -21,6 +29,8 @@ In the second case, the input must be a distance matrix corresponding to the sam
 In this second case, type.X must be "distance".}
 
 \item{affine}{logical; indicates if the affinely transformed distance standard deviation should be calculated or not.}
+
+\item{standardize}{logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.}
 
 \item{bias.corr}{logical; indicates if the bias corrected version of the sample distance variance should be calculated.}
 

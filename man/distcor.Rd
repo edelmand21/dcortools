@@ -4,9 +4,19 @@
 \alias{distcor}
 \title{Calculates the distance correlation}
 \usage{
-distcor(X, Y, affine = FALSE, bias.corr = TRUE, type.X = "sample",
-  type.Y = "sample", metr.X = "euclidean", metr.Y = "euclidean",
-  use = "all", algorithm = "auto")
+distcor(
+  X,
+  Y,
+  affine = FALSE,
+  standardize = FALSE,
+  bias.corr = FALSE,
+  type.X = "sample",
+  type.Y = "sample",
+  metr.X = "euclidean",
+  metr.Y = "euclidean",
+  use = "all",
+  algorithm = "auto"
+)
 }
 \arguments{
 \item{X}{contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".}
@@ -14,6 +24,8 @@ distcor(X, Y, affine = FALSE, bias.corr = TRUE, type.X = "sample",
 \item{Y}{see X.}
 
 \item{affine}{logical; indicates if the affinely transformed distance correlation should be calculated or not.}
+
+\item{standardize}{logical; should X and Y be standardized using the standard deviations of single observations?. No effect when affine = TRUE.}
 
 \item{bias.corr}{logical; indicates if the bias corrected version of the sample distance correlation should be calculated.}
 

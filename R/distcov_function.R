@@ -1,8 +1,13 @@
+#' @useDynLib dcortools
+#' @importFrom Rcpp sourceCpp
+NULL
+
 #' Calculate the distance covariance
 #'
 #' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
 #' @param Y see X.
 #' @param affine logical; indicates if the affinely transformed distance covariance should be calculated or not.
+#' @param standardize logical; should X and Y be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
 #' @param bias.corr logical; indicates if the bias corrected version of the sample distance covariance should be calculated.
 #' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
 #' @param type.Y see type.X.
@@ -17,7 +22,8 @@ distcov <-
   function(X,
            Y,
            affine = FALSE,
-           bias.corr = TRUE,
+           standardize=FALSE,
+           bias.corr = FALSE,
            type.X = "sample",
            type.Y = "sample",
            metr.X = "euclidean",
@@ -85,51 +91,47 @@ distcov <-
       } else {
         Y <- Y / sd(Y)
       }
+    } else if (standardize) {
+      if (type.X == "distance" | type.Y == "distance") {
+        stop("Standardization cannot be applied for type distance.")
+      }
+      if (p > 1) {
+        X <- standardise(X, center = FALSE)
+      } else {
+        X <- X / sd(X)
+      }
+      if (q > 1) {
+        Y <- standardise(Y, center = FALSE)
+      } else {
+        Y <- Y / sd(Y)
+      }
     }
+    
+    
+    alg.fast <- alg.standard <- alg.memsave <- FALSE
     
     if (algorithm == "auto") {
       if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
           & metr.Y[1] %in% c("euclidean", "discrete") & n > 100) {
-        algorithm <- "fast"
+        alg.fast <- TRUE
       } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
                  metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-        algorithm <- "memsave"
+        alg.memsave <- TRUE
       } else {
-        algorithm <- "standard"
+        alg.standard <- TRUE
       }
-    }
-    
-    if (algorithm == "fast") {
-      if (p == 1 & q == 1) {
-        if (metr.X == "euclidean" & metr.Y == "euclidean") {
-          terms <- dcovterms.fast(X, Y, n)
-        } else if (metr.X == "euclidean" & metr.Y == "discrete") {
-          Y <- as.factor(Y)
-          terms <- dcovterms.fast.numdisc(X, Y, n)
-        } else if (metr.X == "discrete" & metr.Y == "euclidean") {
-          X <- as.factor(X)
-          terms <- dcovterms.fast.numdisc(Y, X, n)
-        } else if (metr.X == "discrete" & metr.Y == "discrete") {
-          X <- as.factor(X)
-          Y <- as.factor(Y)
-          terms <- dcovterms.fast.discrete(X ,Y, n)
-        } else {
-          stop("metr.X and metr.Y have to be \"euclidean\" or \"discrete\" for fast algorithms")
-        }
-      } else {
-          stop("Dimensions of X and Y must be 1 for fast algorithms.")
-        }
-    } else if (algorithm == "memsave") {
-      if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-          metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-        terms <- dcovterms.memsave(X, Y, metr.X, metr.Y, p, q)
-      } else {
-        stop("Memory efficient algorithms cannot be run with user-defined metrics")
-      }
+    } else if (algorithm == "fast") {
+      alg.fast <- TRUE 
     } else if (algorithm == "standard") {
-      terms <- dcovterms.standard(X, Y, type.X, type.Y, metr.X, metr.Y, p, q)
-    }
+      alg.standard <- TRUE
+    }  else if (algorithm == "memsave") {
+      alg.memsave <- TRUE
+    } else
+      stop ("Algorithm must be one of \"fast\", \"standard\", \"memsave\" or \"auto\"")
     
+
+    terms <- dcovterms(X, Y, n, calc.dcor = FALSE, doperm = FALSE, dobb3 = FALSE, alg.fast = alg.fast, alg.memsave = alg.memsave, alg.standard = alg.standard, p = p, q = q, metr.X = metr.X, metr.Y =metr.Y, type.X = type.X, type.Y = type.Y)
+
    
     if (bias.corr) {
       dcov2 <- terms$aijbij / n / (n - 3) - 2 * terms$Sab / n / (n - 2) / (n - 3) + terms$Tab / n / (n - 1) / (n - 2) / (n - 3)
@@ -158,6 +160,7 @@ distcov <-
 #'
 #' In this second case, type.X must be "distance".
 #' @param affine logical; indicates if the affinely transformed distance standard deviation should be calculated or not.
+#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
 #' @param bias.corr logical; indicates if the bias corrected version of the sample distance variance should be calculated.
 #' @param type.X either "sample" or "distance"; specifies the type of input for X.
 #' @param metr.X specifies the metric which should be used for X to analyse the distance variance TO DO: Provide details for this.
@@ -167,7 +170,8 @@ distcov <-
 distsd <-
   function(X,
            affine = FALSE,
-           bias.corr = TRUE,
+           standardize=FALSE,
+           bias.corr = FALSE,
            type.X = "sample",
            metr.X = "euclidean",
            use = "all",
@@ -208,23 +212,43 @@ distsd <-
       } else {
         X <- X / sd(X)
       }
-    }
-    
-    if (algorithm == "auto") {
-      if (p == 1 & metr.X[1] %in% c("euclidean", "discrete") & n > 100) {
-        algorithm <- "fast"
-      } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-        algorithm <- "memsave"
+    } else if (standardize) {
+      if (type.X == "distance") {
+        stop("Standardization cannot be applied for type distance.")
+      }
+      if (p > 1) {
+        X <- standardise(X, center = FALSE)
       } else {
-        algorithm <- "standard"
+        X <- X / sd(X)
       }
     }
     
-    if (algorithm == "fast") {
+    
+    alg.fast <- alg.standard <- alg.memsave <- FALSE
+    
+    if (algorithm == "auto") {
+      if (p == 1 & metr.X[1] %in% c("euclidean", "discrete") 
+           & n > 100) {
+        alg.fast <- TRUE
+      } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
+        alg.memsave <- TRUE
+      } else {
+        alg.standard <- TRUE
+      }
+    } else if (algorithm == "fast") {
+      alg.fast <- TRUE 
+    } else if (algorithm == "standard") {
+      alg.standard <- TRUE
+    }  else if (algorithm == "memsave") {
+      alg.memsave <- TRUE
+    } else
+      stop ("Algorithm must be one of \"fast\", \"standard\", \"memsave\" or \"auto\"")
+    
+    if (alg.fast) {
       if (p == 1) {
-        if (metr.X == "euclidean") {
+        if (metr.X[1] == "euclidean") {
           terms <- dcovterms.fast(X = X, n = n, calc.dvar = TRUE)
-        } else if (metr.X == "discrete") {
+        } else if (metr.X[1] == "discrete") {
           X <- as.factor(X)
           terms <- dcovterms.fast.discrete(X = X, n = n, calc.dvar =TRUE)
         } else {
@@ -233,13 +257,13 @@ distsd <-
       } else {
         stop("Dimensions of X must be 1 for fast algorithms.")
       }
-    } else if (algorithm == "memsave") {
+    } else if (alg.memsave) {
       if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
         terms <- dvarterms.memsave(X, metr.X, p)
       } else {
         stop("Memory efficient algorithms cannot be run with user-defined metrics")
       }
-    } else if (algorithm == "standard") {
+    } else if (alg.standard) {
       terms <- dcovterms.standard(X = X, type.X = type.X, metr.X = metr.X, p = p, calc.dvar = TRUE)
     }
     
@@ -264,6 +288,7 @@ distsd <-
 #' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
 #' @param Y see X.
 #' @param affine logical; indicates if the affinely transformed distance correlation should be calculated or not.
+#' @param standardize logical; should X and Y be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
 #' @param bias.corr logical; indicates if the bias corrected version of the sample distance correlation should be calculated.
 #' @param type.X either "sample" or "distance"; specifies the type of input for X.
 #' @param type.Y see type.X.
@@ -277,7 +302,8 @@ distcor <-
   function(X,
            Y,
            affine = FALSE,
-           bias.corr = TRUE,
+           standardize=FALSE,
+           bias.corr = FALSE,
            type.X = "sample",
            type.Y = "sample",
            metr.X = "euclidean",
@@ -347,51 +373,46 @@ distcor <-
       } else {
         Y <- Y / sd(Y)
       }
+    } else if (standardize) {
+      if (type.X == "distance" | type.Y == "distance") {
+        stop("Standardization cannot be applied for type distance.")
+      }
+      if (p > 1) {
+        X <- standardise(X, center = FALSE)
+      } else {
+        X <- X / sd(X)
+      }
+      if (q > 1) {
+        Y <- standardise(Y, center = FALSE)
+      } else {
+        Y <- Y / sd(Y)
+      }
     }
     
+    
+    alg.fast <- alg.standard <- alg.memsave <- FALSE
     
     if (algorithm == "auto") {
       if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
           & metr.Y[1] %in% c("euclidean", "discrete") & n > 100) {
-        algorithm <- "fast"
+        alg.fast <- TRUE
       } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
                  metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-        algorithm <- "memsave"
+        alg.memsave <- TRUE
       } else {
-        algorithm <- "standard"
+        alg.standard <- TRUE
       }
-    }
-    
-    if (algorithm == "fast") {
-      if (p == 1 & q == 1) {
-        if (metr.X == "euclidean" & metr.Y == "euclidean") {
-          terms <- dcovterms.fast(X, Y, n, calc.dcor = TRUE)
-        } else if (metr.X == "euclidean" & metr.Y == "discrete") {
-          Y <- as.factor(Y)
-          terms <- dcovterms.fast.numdisc(X, Y, n, calc.dcor = TRUE)
-        } else if (metr.X == "discrete" & metr.Y == "euclidean") {
-          X <- as.factor(X)
-          terms <- dcovterms.fast.numdisc(Y, X, n, calc.dcor = TRUE)
-        } else if (metr.X == "discrete" & metr.Y == "discrete") {
-          X <- as.factor(X)
-          Y <- as.factor(Y)
-          terms <- dcovterms.fast.discrete(X ,Y, n, calc.dcor = TRUE)
-        } else {
-          stop("metr.X and metr.Y have to be \"euclidean\" or \"discrete\" for fast algorithms")
-        }
-      } else {
-        stop("Dimensions of X and Y must be 1 for fast algorithms.")
-      }
-    } else if (algorithm == "memsave") {
-      if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-          metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-        terms <- dcovterms.memsave(X, Y, metr.X, metr.Y, p, q, calc.dcor = TRUE)
-      } else {
-        stop("Memory efficient algorithms cannot be run with user-defined metrics")
-      }
+    } else if (algorithm == "fast") {
+      alg.fast <- TRUE 
     } else if (algorithm == "standard") {
-      terms <- dcovterms.standard(X, Y, type.X, type.Y, metr.X, metr.Y, p, q, calc.dcor = TRUE)
-    }
+      alg.standard <- TRUE
+    }  else if (algorithm == "memsave") {
+      alg.memsave <- TRUE
+    } else
+      stop ("Algorithm must be one of \"fast\", \"standard\", \"memsave\" or \"auto\"")
+    
+    
+    terms <- dcovterms(X, Y, n, calc.dcor = TRUE, doperm = FALSE, dobb3 = FALSE, alg.fast = alg.fast, alg.memsave = alg.memsave, alg.standard = alg.standard, p = p, q = q, metr.X = metr.X, metr.Y =metr.Y, type.X = type.X, type.Y = type.Y)
     
     
     if (bias.corr) {
