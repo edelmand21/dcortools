@@ -75,7 +75,7 @@ print.dcmatrix <- function(dcmat) {
 }
 
 #' @export
-plot.dcmatrix <- function(dcmat, type = "dcor", cluster_rows = FALSE, cluster_cols = FALSE, display_numbers=TRUE, ...) {
+plot.dcmatrix <- function(dcmat, type = "dcor", maxlogp=16, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers=TRUE,  ...) {
   
   if (type =="dcor") {
     mat <- dcmat$dcor 
@@ -83,36 +83,64 @@ plot.dcmatrix <- function(dcmat, type = "dcor", cluster_rows = FALSE, cluster_co
     mat <- dcmat$dcov 
   } else if (type == "logp") {
     mat <- -log10(dcmat$pvalue)
+    mat[mat>maxlogp] <- maxlogp
   } else if (type == "cor") {
     mat <- dcmat$cor
+  } else if (type == "abscor") {
+    mat <- abs(dcmat$cor)
   } else if (type == "logp.cor") {
     mat <- -log10(dcmat$pval.cor)
+    mat[mat>maxlogp] <- maxlogp
   } else if (type == "dcor.pw") {
     mat <- dcmat$dcor.pw 
   } else if (type == "dcov.pw") {
     mat <- dcmat$dcov.pw 
   } else if (type == "logp.pw") {
     mat <- -log10(dcmat$pvalue.pw)
-  } 
+    mat[mat>maxlogp] <- maxlogp
+  } else {
+    stop(" \"type\" must be one of \"dcor\",\"logp\",\"cor\",\"abscor\", \"logp.cor\",\"dcor.pw\",\"dcov.pw\" or \"logp.pw\" ")
+  }
+  
+  if (anyNA(mat)|any(mat==Inf)) {
+    warning("NAs and Infs were set to 0 for plotting.")
+    mat[is.na(mat)] <- 0
+    mat[mat == Inf] <- 0
+  }
+  
 
   pheatmap(mat, cluster_rows = cluster_rows, cluster_cols = cluster_cols, display_numbers= display_numbers, ...)
 
 }
 
+
+
+#' Draws a horseshoe plot
+#'
+#' @param dcmat: A dcmatrix object
+#' @param maxcomp: Maximum number of associations, for which distance correlation is plotted against correlation. If the number of associations in the dcmat object is larger, only the maxcomp associations with the largest difference between distance correlation and absolute (Pearson/Spearman/Kendall) correlation are plotted.
+#' @param col: color of the plot
+#' @param alpha: alpha parameter of the plot
+#' @param cortrafo: Either "none" or "gaussiandcov". If "gaussiandcov", the distance covariance under assumption of normality is calculated and plotted against the actual distance correlation. Note that this is only sensible for Pearson correlation.
+#' @return Plot.
 #' @export
 hsplot <- function(dcmat, maxcomp = 1e5, col = "blue", alpha = 1, cortrafo = "none") {
   pw <- FALSE
   
   if (is.null(dcmat$corr) | is.null(dcmat$dcor))
-    stop("Correlation and distance correlation matrix needed for plot!")
+    stop("Correlation and (pairwise) distance correlation matrix needed for horseshoe plot!")
 
   if (anyDuplicated(dcmat$group.X)) {
    pw <- TRUE
-  }
+   if (is.null(dcmat$dcor.pw))
+     stop("Pairwise distance correlation matrix needed for horseshoe plot!")
+  }#
   
   if (dcmat$withY) {
     if (anyDuplicated(dcmat$group.Y)) {
       pw <- TRUE
+      if (is.null(dcmat$dcor.pw))
+        stop("Pairwise distance correlation matrix needed for horseshoe plot!")
     }
   }
     
@@ -126,6 +154,7 @@ hsplot <- function(dcmat, maxcomp = 1e5, col = "blue", alpha = 1, cortrafo = "no
     else
       dcor <- c(as.dist(dcmat$dcor))
   } else {
+    
     corr <- c(dcmat$corr)
     if (pw)
       dcor <- c(dcmat$dcor.pw)
@@ -148,7 +177,7 @@ hsplot <- function(dcmat, maxcomp = 1e5, col = "blue", alpha = 1, cortrafo = "no
     dcor <- dcor[sel]
     corr <- corr[sel]
   }
-  print(ggplot() + geom_point(aes(dcor,corr), alpha = alpha) + ylab(xl) + xlab("Distance Correlation"))
+  print(ggplot() + geom_point(aes(dcor,corr), alpha = alpha, color =col) + ylab(xl) + xlab("Distance Correlation"))
 }
 
 #' #' @export

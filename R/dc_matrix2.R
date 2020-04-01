@@ -169,7 +169,10 @@ dcmatrix <- function (X,
   n <- nrow(X)
   
   if (is.null(group.X)) {
-    group.X <- 1:p
+    if (is.null(colnames(X)))
+     group.X <- 1:p
+     else
+     group.X <- colnames(X)
   } 
   
   names.X <- names.Y <-  unique(group.X)
@@ -255,7 +258,10 @@ dcmatrix <- function (X,
     m <- nrow(Y)
     
     if (is.null(group.Y)) {
-      group.Y <- 1 : q
+      if (is.null(colnames(Y)))
+        group.Y <- 1 : q
+        else
+        group.Y <- colnames(Y)
     }
    #   names.Y <- colnames(Y)
    # } else 
@@ -464,7 +470,7 @@ dcmatrix <- function (X,
     }
     if (withY) {
       for (j in 1:dY) {
-        if (is.factor(Y[,groupslistY[[j]]]) | is.character(X[,groupslistX[[j]]]))
+        if (is.factor(Y[,groupslistY[[j]]]) | is.character(Y[,groupslistY[[j]]]))
           metr.Y[[j]] <- "discrete"
       }
     }
@@ -698,7 +704,7 @@ dcmatrix <- function (X,
     output$group.Y <- group.Y
     output$dY <- dY
     output$names.Y <- names.Y
-    output$groupslistY <- output$groupslistY
+    output$groupslistY <- groupslistY
   } 
   
   return(output)

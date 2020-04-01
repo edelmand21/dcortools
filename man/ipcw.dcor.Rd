@@ -4,7 +4,14 @@
 \alias{ipcw.dcor}
 \title{Calculates the inverse-probability-of-censoring weighted (IPCW) distance correlation}
 \usage{
-ipcw.dcor(Y, X, cutoff = NULL)
+ipcw.dcor(
+  Y,
+  X,
+  type.X = "sample",
+  metr.X = "euclidean",
+  use = "all",
+  cutoff = NULL
+)
 }
 \arguments{
 \item{Y}{A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).}

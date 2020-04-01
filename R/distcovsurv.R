@@ -7,9 +7,9 @@
 #' @export
 
 
-ipcw.dcor <- function(Y, X, cutoff = NULL) {
+ipcw.dcor <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
   
-  dcor <- ipcw.dcov(Y, X, cutoff) / sqrt(ipcw.dcov(Y, Y[,1], cutoff)) / sqrt(distsd(X,bias.corr=TRUE))
+  dcor <- ipcw.dcov(Y, X, type.X, metr.X, use, cutoff) / sqrt(ipcw.dcov(Y, Y[,1], type.X, metr.X, use, cutoff)) / sqrt(distsd(X =  X, type.X = type.X, metr.X = metr.X, use = use, bias.corr=TRUE))
   
   return(dcor)
 }
@@ -25,7 +25,7 @@ ipcw.dcor <- function(Y, X, cutoff = NULL) {
 #' @export
 
 
-ipcw.dcov <- function(Y, X, cutoff = NULL) {
+ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
 
     # extract sample size and dimension
 
@@ -40,6 +40,21 @@ ipcw.dcov <- function(Y, X, cutoff = NULL) {
     
     if (ncol(Y) != 2)
       stop("Y must be a matrix with two columns with time in the first column and status indicator in the second.")
+    
+    
+    if (use == "complete.obs") {
+      ccY <- complete.cases(Y)
+      Y <- Y[ccY,]
+      n <- length(ccY)
+      if (type.X == "sample" && p == 1) {
+        X <- X[ccY]
+      } else if (type.X == "sample" && p > 1) {
+        X <- X[ccY, ]
+      }
+      if (type.X == "distance") {
+        X <- X[ccY,ccY]
+      }
+    }
     
     time <- Y[,1]
     status <- Y[,2]
@@ -81,6 +96,22 @@ ipcw.dcov <- function(Y, X, cutoff = NULL) {
     ipcw <- ipcw[events]
     time <- time[events]
     status <- status[events]
+    
+    if (use == "complete.obs") {
+      ccX <- which(complete.cases(X))
+      n <- length(ccX)
+      if (type.X == "sample" && p == 1) {
+        X <- X[ccX]
+      } else if (type.X == "sample" && p > 1) {
+        X <- X[ccX, ]
+      }
+      if (type.X == "distance") {
+        X <- X[ccX,ccX]
+      }
+      time <- time[ccX]
+      status <- status[ccX]
+    }
+    
 
 
     if (p==1)
@@ -91,7 +122,7 @@ ipcw.dcov <- function(Y, X, cutoff = NULL) {
 
     #distance matrices
 
-    distX <- Rfast:::Dist(X)
+    distX <- distmat(X, metr.X, p)
     distT <- Rfast:::Dist(time)
     k <- sum(status)
 
@@ -136,7 +167,7 @@ ipcw.dcov <- function(Y, X, cutoff = NULL) {
 #' @export
 
 
-ipcw.dcov.test <- function(Y, X, cutoff = NULL, B=499)
+ipcw.dcov.test <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL, B=499)
 {
     ss.dimX <- dcortools:::extract_np(X, "sample")
 
@@ -146,8 +177,26 @@ ipcw.dcov.test <- function(Y, X, cutoff = NULL, B=499)
     if (ncol(Y) != 2)
       stop("Y must be a matrix with two columns with time in the first column and status indicator in the second.")
     
+    
+    if (use == "complete.obs") {
+      ccY <- complete.cases(Y)
+      Y <- Y[ccY,]
+      n <- length(ccY)
+      if (type.X == "sample" && p == 1) {
+        X <- X[ccY]
+      } else if (type.X == "sample" && p > 1) {
+        X <- X[ccY, ]
+      }
+      if (type.X == "distance") {
+        X <- X[ccY,ccY]
+      }
+    }
+    
     time <- Y[,1]
     status <- Y[,2]
+    
+   
+      
 
     IX <- Rfast::Order(time)
 
@@ -184,9 +233,23 @@ ipcw.dcov.test <- function(Y, X, cutoff = NULL, B=499)
     time <- time[events]
     status <- status[events]
 
+    if (use == "complete.obs") {
+      ccX <- which(complete.cases(X))
+      n <- length(ccX)
+    if (type.X == "sample" && p == 1) {
+        X <- X[ccX]
+      } else if (type.X == "sample" && p > 1) {
+        X <- X[ccX, ]
+      }
+      if (type.X == "distance") {
+        X <- X[ccX,ccX]
+      }
+      time <- time[ccX]
+      status <- status[ccX]
+    }
+    
 
-
-    distXall <- Rfast:::Dist(X)
+    distXall <- distmat(X, metr.X, p)
     distX <- distXall[events, events]
     distT <- Rfast:::Dist(time)
     k <- sum(status)

@@ -23,7 +23,7 @@ distcov.test <- function(X,
                          b = 499L,
                          ln = 20,
                          affine = FALSE,
-                         standardize = TRUE,
+                         standardize = FALSE,
                          bias.corr = FALSE,
                          type.X = "sample",
                          type.Y = "sample",
@@ -232,10 +232,10 @@ distcov.test <- function(X,
   
   if (algorithm == "auto") {
     if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
-        & metr.Y %in% c("euclidean", "discrete") & n > 100 & !(dobb3|dowild1|dowild2)) {
+        & metr.Y %in% c("euclidean", "discrete") & n > 100 &  type.X == "sample" & type.Y == "sample" & !(dobb3|dowild1|dowild2)) {
       algorithm <- "fast"
     } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-               metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & !(dobb3|dowild1|dowild2)) {
+               metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & type.X == "sample" & type.Y == "sample" & !(dobb3|dowild1|dowild2)) {
       algorithm <- "memsave"
     } else {
       algorithm <- "standard"
@@ -322,9 +322,13 @@ distcov.test <- function(X,
   output$method <- method
   output$affine <- affine
   output$bias.corr <- bias.corr
+  output$standardize <- standardize
   output$metr.X <- metr.X
   output$metr.Y <- metr.Y
   output$b <- b
+  
+ # if (dogamma) 
+  #  warning("The simple gamma approximation can be anticonservative, in particular for small p-values.")
   
   return(output)
 }

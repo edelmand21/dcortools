@@ -11,7 +11,7 @@ distcov.test(
   b = 499L,
   ln = 20,
   affine = FALSE,
-  standardize = TRUE,
+  standardize = FALSE,
   bias.corr = FALSE,
   type.X = "sample",
   type.Y = "sample",

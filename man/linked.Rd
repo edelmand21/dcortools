@@ -63,7 +63,7 @@ linked(
 
 \item{palette.heatmap}{Passed to the options of the heatmap.}
 
-\item{palette.heatmap0}{Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap}
+\item{palette.heatmap0}{Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap.}
 
 \item{beeswarm}{logical; Plot a beeswarm plot instead of a standard scatter plot.}
 }

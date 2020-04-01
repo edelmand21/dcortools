@@ -33,7 +33,7 @@ double boundsq2(double aij, double prm) {
 
 double gaussian2par(double aij, double prm) {
   (void) prm;
-  return 1 - exp(- 0.5 * aij / prm);
+  return 1 - exp(- 0.5 * aij / prm / prm);
 }
 
 double boundsq2par(double aij, double prm) {
@@ -74,7 +74,7 @@ double boundsq2vec(double aij, double prm) {
 }
 
 double gaussian2vecpar(double aij, double prm) {
-  return 1 - exp(- 0.5 * aij * aij / prm);
+  return 1 - exp(- 0.5 * aij * aij / prm / prm);
 }
 
 double boundsq2vecpar(double aij, double prm) {

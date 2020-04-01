@@ -46,13 +46,10 @@ distcov <-
     
     if  (use == "complete.obs") {
       ccX <- ccY <- cc <- 1:n
-      if (type.X == "sample") {
-        ccX <- which(complete.cases(X))
-      }
-      if (type.Y == "sample") {
-        ccY <- which(complete.cases(Y))
-      }
+      ccX <- which(complete.cases(X))
+      ccY <- which(complete.cases(Y))
       cc <- intersect(ccX, ccY)
+      n <- m <- length(cc)
       if (type.X == "sample" && p == 1) {
         X <- X[cc]
       } else if (type.X == "sample" && p > 1) {
@@ -63,7 +60,7 @@ distcov <-
       } else if (type.X == "sample" && p > 1) {
         Y <- Y[cc, ]
       }
-      n <- m <- length(cc)
+ 
       
       if (type.X == "distance") {
         X <- X[cc,cc]
@@ -112,10 +109,10 @@ distcov <-
     
     if (algorithm == "auto") {
       if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
-          & metr.Y[1] %in% c("euclidean", "discrete") & n > 100) {
+          & metr.Y[1] %in% c("euclidean", "discrete") & type.X == "sample" & type.Y == "sample" & n > 100) {
         alg.fast <- TRUE
       } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-                 metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
+                 metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & type.X == "sample" & type.Y == "sample") {
         alg.memsave <- TRUE
       } else {
         alg.standard <- TRUE
@@ -184,6 +181,7 @@ distsd <-
     
     if (use == "complete.obs") {
       ccX <-  1:n
+      n <- length(ccX)
       if (type.X == "sample") {
         ccX <- which(complete.cases(X))
       }
@@ -192,7 +190,6 @@ distsd <-
       } else if (type.X == "sample" && p > 1) {
         X <- X[ccX, ]
       }
-      n <- length(ccX)
       if (type.X == "distance") {
         X <- X[cc,cc]
       }
@@ -228,9 +225,9 @@ distsd <-
     
     if (algorithm == "auto") {
       if (p == 1 & metr.X[1] %in% c("euclidean", "discrete") 
-           & n > 100) {
+            & type.X == "sample" & n > 100) {
         alg.fast <- TRUE
-      } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
+      } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & type.X == "sample") {
         alg.memsave <- TRUE
       } else {
         alg.standard <- TRUE
@@ -320,27 +317,22 @@ distcor <-
     m <- ss.dimY$Sample.Size
     q <- ss.dimY$Dimension
     
-    if (use == "complete.obs") {
+    if  (use == "complete.obs") {
       ccX <- ccY <- cc <- 1:n
-      if (type.X == "sample") {
-        ccX <- which(complete.cases(X))
-      }
-      if (type.Y == "sample") {
-        ccY <- which(complete.cases(Y))
-      }
+      ccX <- which(complete.cases(X))
+      ccY <- which(complete.cases(Y))
       cc <- intersect(ccX, ccY)
+      n <- m <- length(cc)
       if (type.X == "sample" && p == 1) {
         X <- X[cc]
       } else if (type.X == "sample" && p > 1) {
         X <- X[cc, ]
       }
-      if (type.Y == "sample" && q == 1) {
+      if (type.Y == "sample" && p == 1) {
         Y <- Y[cc]
-      } else if (type.X == "sample" && q > 1) {
+      } else if (type.X == "sample" && p > 1) {
         Y <- Y[cc, ]
       }
-      n <- m <- length(cc)
-      
       if (type.X == "distance") {
         X <- X[cc,cc]
       }
@@ -394,10 +386,10 @@ distcor <-
     
     if (algorithm == "auto") {
       if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
-          & metr.Y[1] %in% c("euclidean", "discrete") & n > 100) {
+          & metr.Y[1] %in% c("euclidean", "discrete") & type.X == "sample" & type.Y == "sample" & n > 100) {
         alg.fast <- TRUE
       } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-                 metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
+                 metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & type.X == "sample" & type.Y == "sample") {
         alg.memsave <- TRUE
       } else {
         alg.standard <- TRUE

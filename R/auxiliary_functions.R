@@ -1,16 +1,3 @@
-
-#' Calculate the double-centered distance matrix of a given vector and a given metric.
-#'
-#' @param X a numeric vector or a numeric matrix.
-#' @param metr.X metric that should be used to compute the distance matrix.
-#' @param n number of samples, i.e. the number of rows of X..
-#' @param p number of repetitions, i.e. the number of columns of X.
-#' @param ... additional parameters that are used for other metrics (e.g., the bandwidth for Gaussian kernels)
-#' @details For metr.X the following metrices are built in: euclidean, gaussian and discrete. However,
-#' it is possible to use a function taking two numerical arguments as metr.X.
-#'
-#' @return The distance matrix corresponding to X.
-#' @export
 centmat <- function(X,
                     metr.X = "euclidean",
                     p) {
@@ -21,11 +8,6 @@ centmat <- function(X,
 
 
 
-#' Double-centers a matrix.
-#'
-#' @distX A numeric matrix to center.
-#' @return The distance matrix corresponding to X.
-#' @export
 doublecent <- function(distX) {
   n <- nrow(distX)
   rm <- Rfast::rowmeans(distX)
@@ -38,18 +20,6 @@ doublecent <- function(distX) {
 
 
 
-#' Calculate the distance matrix of a given vector and a given metric.
-#'
-#' @param X a numeric vector or a numeric matrix.
-#' @param metr.X metric that should be used to compute the distance matrix.
-#' @param n number of samples, i.e. the number of rows of X..
-#' @param p number of repetitions, i.e. the number of columns of X.
-#' @param ... additional parameters that are used for other metrics (e.g., the bandwidth for Gaussian kernels)
-#' @details For metr.X the following metrices are built in: euclidean, gaussian and discrete. However,
-#' it is possible to use a function taking two numerical arguments as metr.X.
-#'
-#' @return The distance matrix corresponding to X.
-#' @export
 distmat <- function(X,
                     metr.X = "euclidean",
                     p) {
@@ -63,9 +33,9 @@ distmat <- function(X,
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::vecdist(X) ^ 2)
       } else if (metr.X == "gaussauto") {
-        preX <- Rfast::vecdist(X)
-        bw <- median(preX)
-        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
+        preX <- Rfast::vecdist(X)^2
+        bw <- median(as.dist(preX), na.rm = TRUE)
+        distX <- 1 - exp(- preX / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::vecdist(X) 
         distX <- (distX ^ 2) / (1 + distX ^ 2)
@@ -84,9 +54,9 @@ distmat <- function(X,
       } else if (metr.X == "gaussian") {
         distX <- 1 - exp(-0.5 * Rfast::Dist(X) ^ 2)
       } else if (metr.X == "gaussauto") {
-        preX <- Rfast::Dist(X)
-        bw <- median(preX)
-        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
+        preX <- Rfast::Dist(X)^2
+        bw <- median(as.dist(preX), na.rm= TRUE)
+        distX <- 1 - exp(- preX / bw)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::Dist(X) 
         distX <- (distX ^ 2) / (1 + distX ^ 2)
@@ -107,12 +77,12 @@ distmat <- function(X,
       if (metr.X == "alpha") {
         distX <- Rfast::vecdist(X) ^ prm
       } else if (metr.X == "gaussian") {
-        distX <- 1 - exp(-0.5 * Rfast::vecdist(X) ^ 2 / prm)
+        distX <- 1 - exp(-0.5 * Rfast::vecdist(X) ^ 2 / prm ^ 2)
       } else if (metr.X == "gaussauto") {
-        preX <- Rfast::vecdist(X)
-        bw <- median(preX) * prm
-        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
-      } else if (metr.X == "boundsq") {
+        preX <-Rfast::vecdist(X)^2
+        bw <- median(as.dist(preX), na.rm= TRUE)
+        distX <- 1 - exp(- preX / bw / prm ^ 2)
+        } else if (metr.X == "boundsq") {
         distX <- Rfast::vecdist(X) 
         distX <- (distX ^ 2) / (prm ^ 2 + distX ^ 2)
       } else if (metr.X == "minkowski") {
@@ -128,11 +98,11 @@ distmat <- function(X,
       if (metr.X == "alpha") {
         distX <- Rfast::Dist(X) ^ prm
       } else if (metr.X == "gaussian") {
-        distX <- 1 - exp(-0.5 * Rfast::Dist(X) ^ 2 / prm)
+        distX <- 1 - exp(-0.5 * Rfast::Dist(X) ^ 2 / prm ^ 2)
       } else if (metr.X == "gaussauto") {
-        preX <- Rfast::Dist(X)
-        bw <- median(preX) * prm
-        distX <- 1 - exp(-0.5 * preX ^ 2 / bw)
+        preX <-Rfast::Dist(X)^2
+        bw <- median(as.dist(preX), na.rm= TRUE)
+        distX <- 1 - exp(- preX / bw / prm ^ 2)
       } else if (metr.X == "boundsq") {
         distX <- Rfast::Dist(X) 
         distX <- (distX ^ 2) / (prm ^ 2 + distX ^ 2)

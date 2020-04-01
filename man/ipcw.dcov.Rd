@@ -4,7 +4,14 @@
 \alias{ipcw.dcov}
 \title{Calculates the inverse-probability-of-censoring weighted (IPCW) distance covariance}
 \usage{
-ipcw.dcov(Y, X, cutoff = NULL)
+ipcw.dcov(
+  Y,
+  X,
+  type.X = "sample",
+  metr.X = "euclidean",
+  use = "all",
+  cutoff = NULL
+)
 }
 \arguments{
 \item{Y}{A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).}

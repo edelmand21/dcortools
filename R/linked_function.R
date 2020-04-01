@@ -14,7 +14,7 @@
 #' @param smooths Should smooths be fitted to the scatter plots. Options include "none", "xtoy" (x as predictor, y as dependent variable), "ytox" (y as predictor, x as dependent variable) and "both".
 #' @param smooth.type Type of the plotted smooths. Options are "loess", "spline" or "regline".
 #' @param palette.heatmap Passed to the options of the heatmap.
-#' @param palette.heatmap0 Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap
+#' @param palette.heatmap0 Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap.
 #' @param beeswarm logical; Plot a beeswarm plot instead of a standard scatter plot.
 #' @param cgtabmax If set to a numeric value a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.
 #' @param subdat optional; Data.frame with the same number of observations as the original data.
@@ -22,6 +22,7 @@
 #' @return A linked chart object opening in the browser
 #' @export
 linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dcor", size = 2, opacity = 1, discX =NULL, discY =NULL, jitt.disc = 0.1, jitt.cont = 0, smooths ="none", smooth.type = "loess", cgtabmax = NULL, subdat = NULL, subs =NULL, palette.heatmap = RColorBrewer::brewer.pal(9, "Reds"), palette.heatmap0 =RColorBrewer::brewer.pal(9, "YlGnBu"), coldom = NULL, coldom0 = NULL, ...){
+
   
   beeswarm = FALSE
   docg <- !is.null(cgtabmax)
@@ -56,6 +57,9 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
   
   if (is.null(X))
     X <- dcmatrix$X
+  
+  if (is.vector(X))
+    X <- as.matrix(X)
   
   n <- nrow(as.matrix(X))
   colgr <- rep(1,n)
@@ -92,6 +96,8 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
       triplot <- TRUE
     }
       gY <- dcmatrix$groupslistY
+    if (is.vector(Y))
+      Y <- as.matrix(Y)
   }
   else
     Y <- X
@@ -154,17 +160,35 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
 
  
    if (triplot) {
+     
+     
+    hm <- switch(heatmap,dcov = dcmatrix$dcov.pw, dcor = dcmatrix$dcor.pw, logp = -log10(dcmatrix$pvalue.pw), abscor = abs(dcmatrix$cor), cor = dcmatrix$cor)
+     
+    if (is.null(hm))
+      stop("Pairwise dcor/dcov/cor/p-values required for linked chart.")
+    
+  
+   hm0 <- switch(heatmap0,dcov = dcmatrix$dcov, dcor = dcmatrix$dcor, logp = -log10(dcmatrix$pvalue))
+     
+    if (is.null(hm0))
+      stop("dcmatrix object does not contain the desired entries specified in heatmap0.")
+    
+  
    openPage( useViewer=FALSE, layout="table2x3" ) 
      
-   hm0 <- switch(heatmap0,dcov = dcmatrix$dcov, dcor = dcmatrix$dcor, logp = -log10(dcmatrix$pvalue))
-
-   if (is.null(coldom0))
-     coldom0 <- switch(heatmap0, dcov= c(min(min(dcmatrix$dcov),0),max(dcmatrix$dcov)), dcor = c(min(min(dcmatrix$dcor),0),1), logp= c(0,8))
+      if (is.null(coldom0))
+     coldom0 <- switch(heatmap0, dcov= c(min(min(hm0),0),max(hm0)), dcor = c(min(min(hm0),0),1), logp= c(0,8))
 
    
    
    if (heatmap0 == "logp")
      hm0[which(hm0>8,arr.ind=TRUE)] <- 8
+   
+   if (anyNA(hm0) | any(hm0 == Inf)) {
+     warning("NAs and Infs were set to 0 for plotting.")
+     hm0[is.na(hm0)] <- 0
+     hm0[hm0 == Inf] <- 0
+   }
      
     lc_heatmap(
       dat(
@@ -178,13 +202,18 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
         }
       ),
       place = "A1",
-      id ="heatmap0"
+      chartId ="heatmap0"
     )
+
     
-    hm <- switch(heatmap,dcov = dcmatrix$dcov.pw, dcor = dcmatrix$dcor.pw, logp = -log10(dcmatrix$pvalue.pw), abscor = abs(dcmatrix$cor), cor = dcmatrix$cor)
+    if (anyNA(hm) | any(hm == Inf)) {
+      warning("NAs and Infs were set to 0 for plotting.")
+      hm[is.na(hm)] <- 0
+      hm[hm == Inf] <- 0
+    }
     
     if (is.null(coldom))
-      coldom <- switch(heatmap, dcov= c(min(min(dcmatrix$dcov.pw),0),max(dcmatrix$dcov.pw)), dcor = c(min(min(dcmatrix$dcor.pw),0),1), logp= c(0,8), abscor = c(0,1), cor = c(-1,1))
+      coldom <- switch(heatmap, dcov= c(min(min(hm),0),max(hm)), dcor = c(min(min(hm),0),1), logp= c(0,8), abscor = c(0,1), cor = c(-1,1))
 
     
 
@@ -220,7 +249,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
         }
       ),
       place = "A2",
-      id ="heatmap"
+      chartId ="heatmap"
     )
     
     sampleX <- 1
@@ -262,7 +291,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
 
     
       if (docg)
-        lc_html(dat(content = tab), place = "B1", id = "cgtable")  
+        lc_html(dat(content = tab), place = "B1", chartId = "cgtable")  
       
       if (dosub)
         lc_input(type = "radio", labels = c("none",subs), on_click = function(value) {
@@ -275,7 +304,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
 
     
     if (docg)
-      lc_html(dat(content = tab), place = "B1", id = "cgtable")  
+      lc_html(dat(content = tab), place = "B1", chartId = "cgtable")  
     
     if (dosub)
       lc_input(type = "radio", labels = c("none",subs), on_click = function(value) {
@@ -343,13 +372,24 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
     
   } else {  
     
-    X <- X[,group.X]
-    Y <- Y[,group.Y]
+    #X <- X[,group.X]
+    #Y <- Y[,group.Y]
    
     hm <- switch(heatmap,dcov = dcmatrix$dcov, dcor = dcmatrix$dcor, logp = -log10(dcmatrix$pvalue), abscor = abs(dcmatrix$cor), cor = dcmatrix$cor)
     
+    
+    if (is.null(hm))
+      stop("dcmatrix object does not contain the desired entries specified in heatmap0.")
+    
+    if (anyNA(hm) | any(hm == Inf)) {
+      warning("NAs and Infs were set to 0 for plotting.")
+      hm[is.na(hm)] <- 0
+      hm[hm == Inf] <- 0
+    }
+      
+  
     if (is.null(coldom))
-      coldom <- switch(heatmap, dcov= c(min(min(dcmatrix$dcov),0),max(dcmatrix$dcov)), dcor = c(min(min(dcmatrix$dcor),0),1), logp= c(0,8), abscor = c(0,1), cor = c(-1,1))
+      coldom <- switch(heatmap, dcov= c(min(min(hm),0),max(hm)), dcor = c(min(min(hm),0),1), logp= c(0,8), abscor = c(0,1), cor = c(-1,1))
 
     openPage( useViewer=FALSE, layout="table2x2" )
     
@@ -386,7 +426,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
         }
       ),
       place = "A1",
-      id ="heatmap"
+      chartId ="heatmap"
     )
     
   
@@ -474,7 +514,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
       )
 
       if (docg)
-        lc_html(dat(content = tab), place = "B1", id = "cgtable")  
+        lc_html(dat(content = tab), place = "B1", chartId = "cgtable")  
       
       if (dosub)
         lc_input(type = "radio", labels = c("none",subs), on_click = function(value) {

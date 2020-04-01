@@ -4,7 +4,15 @@
 \alias{ipcw.dcov.test}
 \title{Performs a permutation test based on the IPCW distance covariance}
 \usage{
-ipcw.dcov.test(Y, X, cutoff = NULL, B = 499)
+ipcw.dcov.test(
+  Y,
+  X,
+  type.X = "sample",
+  metr.X = "euclidean",
+  use = "all",
+  cutoff = NULL,
+  B = 499
+)
 }
 \arguments{
 \item{Y}{A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).}

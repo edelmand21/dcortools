@@ -31,6 +31,7 @@ print.dctest <- function(dctest) {
   cat("\n")
   cat(paste("Bias correction: ", ifelse(dctest$bias.corr,"Yes \n", "No \n")) )
   cat(paste("Affinely invariant: ", ifelse(dctest$affine,"Yes \n", "No \n")) )
+  cat(paste("Standardization applied: ", ifelse(dctest$standardize,"Yes \n", "No \n")) )
   cat(paste("Metric for X: ", dctest$metr.X, "\n") )
   cat(paste("Metric for Y: ", dctest$metr.Y, "\n") )
 }
