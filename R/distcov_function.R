@@ -2,21 +2,101 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
-#' Calculate the distance covariance
+#' @importFrom Rdpack reprompt
+NULL
+
+#' Calculates the distance covariance \insertCite{szekely2007,szekely2009brownian}{dcortools}.
 #'
-#' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
+#' @param X contains either the first  sample or its corresponding distance matrix.
+#'
+#' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
+#'
+#' In the second case, the input must be a distance matrix corresponding to the sample of interest.
+#'
+#' If X is a sample, type.X must be specified as "sample". If X is a distance matrix, type.X must be specified as "distance".
 #' @param Y see X.
-#' @param affine logical; indicates if the affinely transformed distance covariance should be calculated or not.
-#' @param standardize logical; should X and Y be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
-#' @param bias.corr logical; indicates if the bias corrected version of the sample distance covariance should be calculated.
-#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
+#' @param affine logical; specifies if the affinely invariant distance covariance \insertCite{dueck2014affinely}{dcortools} should be calculated or not.
+#' @param standardize logical; specifies if X and Y should be standardized dividing each component by its standard deviations. No effect when affine = TRUE.
+#' @param bias.corr logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param type.Y see type.X.
-#' @param metr.X specifies the metric which should be used for X to analyse the distance covariance. TO DO: Provide details for this.
-#' @param metr.Y see metr.X.
-#' @param use : specifies how to treat missing values. "complete.obs" excludes NA's, "all" (or any other value) uses all observations.
-#' @param algorithm : "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or discrete. "memsave" uses a memory saving algorithm, which does not save the distance matrices. "standard" uses the classical algorithm. "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#' @return numeric giving the distance covariance between samples X and Y.
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  
+#'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
+#' @param metr.Y see metr.X.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param algorithm specifies the algorithm used for calculating the distance covariance. 
+#' 
+#' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+#' 
+#' "memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+#' 
+#' "standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+#' 
+#' "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' 
+#' @return numeric; the distance covariance between samples X and Y.
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#' @examples 
+#' X <- rnorm(100)
+#' Y <- X + 3 * rnorm(100)
+#' distcov(X, Y) # standard distance covariance
+#' 
+#' distcov(X, Y, metr.X = "gaussauto", metr.Y = "gaussauto") # Gaussian distance with bandwidth choice based on median heuristic
+#' 
+#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha",0.5)) # alpha distance covariance with alpha = 0.5.
+#' 
+#' 
+#' #Define a user-specified (slow) version of the alpha metric
+#' 
+#' alpha_user <- function(X, prm = 1, kernel = FALSE) {
+#'     as.matrix(dist(X)) ^ prm
+#' }
+#' 
+#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha",0.5)) # Gives the same result as before.
+#'    
+#'
+#' #User-specified Gaussian kernel function  
+#'      
+#' gauss_kernel <- function(X, prm = 1, kernel = TRUE)  {
+#'     exp(as.matrix(dist(X)) ^ 2 / 2 / prm ^ 2)
+#' }  
+#' 
+#' distcov(X, Y, metr.X = c("gauss_kernel", 2), metr.Y = c("gauss_kernel",2)) # calculates the distance covariance using the corresponding kernel-induced metric
+#' 
+#' distcov(X, Y, metr.X = c("gaussian", 2), metr.Y = c("gaussian",2))  ## same result
+#' 
+#' Y <- matrix(nrow = 100, ncol = 2)
+#' X <- rnorm(300)
+#' dim(X) <- c(100,3)
+#' Z <- rnorm(100)
+#' Y <- matrix(nrow = 100, ncol = 2)
+#' Y[,1] <- X[,1]+Z
+#' Y[,2] <- 3*Z
+#' 
+#' distcov(X,Y) 
+#' 
+#' distcov(X,Y, affine = T) # affinely invariant distance covariance
+#' 
+#' distcov(X,Y, standardize = T) ## distance covariance standardizing the components of X and Y
+#' 
 #' @export
 distcov <-
   function(X,
@@ -143,27 +223,59 @@ distcov <-
 
 
 
-#' Calculates the distance standard deviation
+#' Calculates the distance standard deviation \insertCite{edelmann2017distance}{dcortools}.
 #'
-#' @param X contains either the first sample or its corresponding distance matrix.
+#' @param X contains either the sample or its corresponding distance matrix.
 #'
-#' In the first case, this input can be either a vector of positive length,
-#'
-#' a matrix with one column or a data.frame with one column.
-#'
-#' In this case, type.X must be specified as "sample".
+#' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
 #'
 #' In the second case, the input must be a distance matrix corresponding to the sample of interest.
 #'
-#' In this second case, type.X must be "distance".
-#' @param affine logical; indicates if the affinely transformed distance standard deviation should be calculated or not.
-#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
-#' @param bias.corr logical; indicates if the bias corrected version of the sample distance variance should be calculated.
-#' @param type.X either "sample" or "distance"; specifies the type of input for X.
-#' @param metr.X specifies the metric which should be used for X to analyse the distance variance TO DO: Provide details for this.
-#' @param use : "all" uses all observations, "complete.obs" excludes NA's
-#' @return numeric giving the distance variance of the sample X..
+#' If X is a sample, type.X must be specified as "sample". If X is a distance matrix, type.X must be specified as "distance".
+#' @param Y see X.
+#' @param affine logical; specifies if the affinely invariant distance standard deviation \insertCite{dueck2014affinely}{dcortools} should be calculated or not.
+#' @param standardize logical; specifies if X and Y should be standardized dividing each component by its standard deviations. No effect when affine = TRUE.
+#' @param bias.corr logical; specifies if the bias corrected version of the sample distance standard deviation \insertCite{huo2016fast}{dcortools} should be calculated.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
+#' 
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  
+#'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param algorithm specifies the algorithm used for calculating the distance standard deviation. 
+#' 
+#' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+#' 
+#' "memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+#' 
+#' "standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+#' 
+#' "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' 
+#' @return numeric; the distance standard deviation of X.
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{edelmann2017distance}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
 #' @export
+#' @examples 
+#' X <- rnorm(100)
+#' distsd(X) # for more examples on the options see the documentation of distcov.
 distsd <-
   function(X,
            affine = FALSE,
@@ -280,21 +392,69 @@ distsd <-
 
 
 
-#' Calculates the distance correlation
+#' Calculates the distance correlation \insertCite{szekely2007,szekely2009brownian}{dcortools}.
 #'
-#' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
+#' @param X contains either the first  sample or its corresponding distance matrix.
+#'
+#' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
+#'
+#' In the second case, the input must be a distance matrix corresponding to the sample of interest.
+#'
+#' If X is a sample, type.X must be specified as "sample". If X is a distance matrix, type.X must be specified as "distance".
 #' @param Y see X.
-#' @param affine logical; indicates if the affinely transformed distance correlation should be calculated or not.
-#' @param standardize logical; should X and Y be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
-#' @param bias.corr logical; indicates if the bias corrected version of the sample distance correlation should be calculated.
-#' @param type.X either "sample" or "distance"; specifies the type of input for X.
+#' @param affine logical; specifies if the affinely invariant distance correlation \insertCite{dueck2014affinely}{dcortools} should be calculated or not.
+#' @param standardize logical; specifies if X and Y should be standardized dividing each component by its standard deviations. No effect when affine = TRUE.
+#' @param bias.corr logical; specifies if the bias corrected version of the sample distance correlation \insertCite{huo2016fast}{dcortools} should be calculated.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param type.Y see type.X.
-#' @param metr.X specifies the metric which should be used for X to analyse the distance correlation. TO DO: Provide details for this.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
+#' 
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  
+#'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
-#' @param use : "all" uses all observations, "complete.obs" excludes NA's
-#' @return numeric giving the distance correlation between samples X and Y.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param algorithm specifies the algorithm used for calculating the distance correlation. 
+#' 
+#' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+#' 
+#' "memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+#' 
+#' "standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+#' 
+#' "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' 
+#' @return numeric; the distance correlation between samples X and Y.
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
 #' @export
-
+#' @examples 
+#' X <- rnorm(200)
+#' Y <- rnorm(200)
+#' Z <- X + rnorm(200)
+#' dim(X) <- dim(Y) <- dim(Z) <- c(20,10)
+#' 
+#' # Demonstration that biased-corrected distance correlation is often more meaningful than without using bias-correction
+#' distcor(X,Y) 
+#' distcor(X,Z) 
+#' cor(X,Y,bias.corr=T)
+#' distcor(X,Z,bias.corr=T)
+#' 
+#' # For more examples of the different option, see the documentation of distcov.
 distcor <-
   function(X,
            Y,

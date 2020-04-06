@@ -10,7 +10,7 @@ dcmatrix(
   calc.dcov = TRUE,
   calc.dcor = TRUE,
   calc.cor = "none",
-  calc.pval.cor = FALSE,
+  calc.pvalue.cor = FALSE,
   return.data = TRUE,
   test = "none",
   adjustp = "none",
@@ -22,7 +22,7 @@ dcmatrix(
   group.Y = NULL,
   metr.X = "euclidean",
   metr.Y = "euclidean",
-  use = "everything",
+  use = "all",
   algorithm = "auto",
   fc.discrete = FALSE,
   calc.dcor.pw = FALSE,
@@ -33,47 +33,96 @@ dcmatrix(
 )
 }
 \arguments{
-\item{X}{A dataframe or matrix with n rows and p columns.}
+\item{X}{A dataframe or matrix.}
 
-\item{Y}{Either NULL or a dataframe or a matrix with n rows and q columns. If only X is provided, distance covariances/correlations are calculated between all groups in X. If X and Y are provided, distance covariances/correlations are calculated between all groups in X and all groups and Y.}
+\item{Y}{Either NULL or a dataframe or a matrix with the same number of rows as X. If only X is provided, distance covariances/correlations are calculated between all groups in X. If X and Y are provided, distance covariances/correlations are calculated between all groups in X and all groups of Y.}
 
-\item{calc.dcov}{Should distance covariance matrix be calculated?}
+\item{calc.dcov}{logical; specifies if the distance covariance matrix is calculated.}
 
-\item{calc.dcor}{Should distance correlation matrix be calculated?}
+\item{calc.dcor}{logical; specifies if the distance correlation matrix is calculated.}
 
 \item{calc.cor}{If set as "pearson", "spearman" or "kendall", a corresponding correlation matrix is addionally calculated.}
 
-\item{calc.pval.cor}{IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr}
+\item{calc.pvalue.cor}{logical; IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr.}
 
-\item{return.data}{IF TRUE, X and Y are contained in the resulting dcmatrix object.}
+\item{return.data}{logical; speciefies if the dcmatrix object should contain the original data.}
 
 \item{test}{specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.}
 
-\item{adjustp}{If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are returned.}
+\item{adjustp}{If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are additionally returned for the distance covariance test.}
 
-\item{b}{specifies the number of random permutations used for the permutation test. Ignored when test="gamma"}
+\item{b}{specifies the number of random permutations used for the permutation test. Ignored for all other tests.}
 
 \item{affine}{logical; indicates if the affinely transformed distance covariance should be calculated or not.}
 
-\item{bias.corr}{logical; indicates if the bias corrected version of the sample distance covariance should be calculated}
+\item{bias.corr}{logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.}
 
-\item{group.X}{A vector of length p, each entry specifying the group membership of the respective column in X. Each group is handled as one sample for calculating the distance covariance/correlation matrices. If NULL, every sample is handled as an individual group.}
+\item{group.X}{A vector, each entry specifying the group membership of the respective column in X. Each group is handled as one sample for calculating the distance covariance/correlation matrices. If NULL, every sample is handled as an individual group.}
 
-\item{group.Y}{A vector of length q, each entry specifying the group membership of the respective column in Y. Each group is handled as one sample for calculating the distance covariance/correlation matrices. If NULL, every sample is handled as an individual group.}
+\item{group.Y}{A vector, each entry specifying the group membership of the respective column in Y. Each group is handled as one sample for calculating the distance covariance/correlation matrices. If NULL, every sample is handled as an individual group.}
 
-\item{metr.X}{Either a single metric or a list providing a metric for each group in X.}
+\item{metr.X}{Either a single metric or a list providing a metric for each group in X (see examples).}
 
 \item{metr.Y}{see metr.X.}
 
 \item{use}{: "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.}
 
-\item{algorithm:}{One of "auto", "fast", "memsave" and "standard". "memsave" is typically very inefficient for dcmatrix and should only be applied in exceptional cases.}
+\item{algorithm}{specifies the algorithm used for calculating the distance covariance. 
 
-\item{fc.discrete:}{If TRUE, "discrete" metric is applied automatically on samples corresponding to a single column of type "factor" or "character".}
+"fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+
+"memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+
+"standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+
+"auto" chooses the best algorithm for the specific setting using a rule of thumb.
+
+"memsave" is typically very inefficient for dcmatrix and should only be applied in exceptional cases.}
+
+\item{calc.dcor.pw}{logical; If TRUE, a distance correlation matrix between the univariate observations/columns is additionally calculated. Not meaningful if group.X and group.Y are not specified.}
+
+\item{calc.dcov.pw}{logical; If TRUE, a distance covariance matrix between the univariate observations/columns is additionally calculated. Not meaningful if group.X and group.Y are not specified.}
+
+\item{metr.pw.X}{Either a single metric or a list providing a metric for each single observation/column in X (see metr.X).}
+
+\item{metr.pw.Y}{See metr.pw.Y.}
+
+\item{fc.discrete:}{logical; If TRUE, "discrete" metric is applied automatically on samples of type "factor" or "character".}
+
+\item{calc.test.pw}{specifes a test (see argument "test") that is performed between all single observations.}
 }
 \value{
-dcmatrix object
+S3 object of class "dcmatrix" with the following components
+\item{name X,Y}{description original data (if return.data = TRUE).} 
+\item{name dcov,dcor}{distance covariance/correlation matrices between the groups specified in group.X/group.Y (if calc.dcov/calc.dcor = TRUE).} 
+\item{name corr}{correlation matrix between the univariate observations/columns (if cal.cor is "pearson", "spearman" or "kendall").}
+\item{name pvalue}{matrix of p-values based on a corresponding distance covariance test based on the entries in dcov (if argument test is not "none").} 
+\item{name pvalue.adj}{matrix of p-values adjusted for multiple comparisons using the method specified in argument adjustp.} 
+\item{name pvalue.cor}{matrix of pvalues based on "pearson"/"spearman" correlation (if calc.cor is "pearson" or "spearman" and calc.pvalue.cor = TRUE).}
+\item{name dcov.pw,dcor.pw}{distance covariance/correlation matrices between the univariate observations (if calc.dcov.pw/calc.dcor.pw = TRUE.} 
+\item{name pvalue.pw}{matrix of p-values based on a corresponding distance covariance test based on the entries in dcov.pw (if argument test is not "none").}
 }
 \description{
 Calculates distance covariance and distance correlation matrices
+}
+\references{
+\insertRef{berschneider2018complex}{dcortools}
+
+\insertRef{bottcher2017detecting}{dcortools}
+
+\insertRef{chwialkowski2014wild}{dcortools}
+
+\insertRef{dueck2014affinely}{dcortools}
+
+\insertRef{huang2017statistically}{dcortools}
+
+\insertRef{huo2016fast}{dcortools}
+
+\insertRef{lyons2013distance}{dcortools}
+
+\insertRef{sejdinovic2013equivalence}{dcortools}
+
+\insertRef{szekely2007}{dcortools}
+
+\insertRef{szekely2009brownian}{dcortools}
 }

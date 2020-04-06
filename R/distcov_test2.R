@@ -1,22 +1,74 @@
-#' Performs a distance covariance test
+#' Performs a distance covariance test.
 #'
-#' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
+#' @param X contains either the first  sample or its corresponding distance matrix.
+#'
+#' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
+#'
+#' In the second case, the input must be a distance matrix corresponding to the sample of interest.
+#'
+#' If X is a sample, type.X must be specified as "sample". If X is a distance matrix, type.X must be specified as "distance".
 #' @param Y see X.
-#' @param test specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.
-#' @param b specifies the number of random permutations/bootstrap samples used for the permutation or wild bootstraps tests. Ignored for other tests.
-#' @param ln block size parameter for wild bootstrap tests. Ignored for other tests.
-#' @param affine logical; indicates if the affinely transformed distance covariance should be calculated or not.
-#' @param bias.corr logical; indicates if the bias corrected version of the sample distance covariance should be calculated.
-#' @param type.X either "sample" or "distance"; specifies the type of input for X.
+#' @param method specifies the type of test that is performed.
+#'  
+#' "permutation" performs a Monte Carlo Permutation test. 
+#' 
+#' "gamma" performs a test based on a gamma approximation of the test statistic under the null \insertCite{huang2017statistically}{dcortools}. This test tends to be anti-conservative, if the ``real'' p-value is small
+#' 
+#' "conservative" performs a conservative two-moment approximation \insertCite{berschneider2018complex}{dcortools}.
+#'   
+#' "bb3" performs a  three-moment approximation  \insertCite{berschneider2018complex}{dcortools}. This is the most precise parametric option, but only available with the standard algorithm.
+#' 
+#' "wildbs1" and "wilbs2" perform wild bootstrap tests \insertCite{chwialkowski2014wild}{dcortools}; experimental at the moment.
+#' @param b integer; specifies the number of random permutations/bootstrap samples used for the permutation or wild bootstraps tests. Ignored for other tests.
+#' @param ln numeric; block size parameter for wild bootstrap tests. Ignored for other tests.
+#' @param affine logical; specifies if the affinely invariant distance covariance \insertCite{dueck2014affinely}{dcortools} should be calculated or not.
+#' @param standardize logical; specifies if X and Y should be standardized dividing each component by its standard deviations. No effect when affine = TRUE.
+#' @param bias.corr logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param type.Y see type.X.
-#' @param metr.X specifies the metric which should be used for X to analyse the distance covariance. One of "euclidean", "gaussian", "boundsq", "alpha", "discrete" or a user-defined metric or kernel (see examples). It is also possible to specify parameters for "gaussian", "boundsq" and "alpha" via c(metr,param), e.g. c("gaussian",2) will result in a Gaussian metric with bandwith parameter 2.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
+#' 
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  
+#'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
-#' @param use : "all" uses all observations, "complete.obs" excludes NA's
-#' @param return.data : IF TRUE, X and Y are contained in the resulting distcov.test object.
-#' @param algorithm: One of "auto", "fast", "memsave" and "standard". "fast" has a lower computational complexity than "memsave" and "standard", but cannot be used with vector-valued data, other metrics than "discrete" or "euclidean" or the "bb3" test. "memsave" can be used in most settings and is slightly faster than the "standard" algorithm. Moreover, different to "standard", it can be used for very large sample size. "standard" can be used with all metrics and tests, however is the slowest algorithm and breaks down with large sample sizes. "auto" chooses an algorithm using feasibility and rules of thumb.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param return.data logical; speciefies if the test object should contain the original data.
+#' @param algorithm specifies the algorithm used for calculating the distance covariance. 
+#' 
+#' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+#' 
+#' "memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+#' 
+#' "standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+#' 
+#' "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' 
 #' @return distcov.test object
 #' @export
-
+#' @references
+#' \insertRef{berschneider2018complex}{dcortools}
+#' 
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{chwialkowski2014wild}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huang2017statistically}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#'
 distcov.test <- function(X,
                          Y,
                          method = "permutation",

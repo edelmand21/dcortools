@@ -1,31 +1,91 @@
-#' Calculates the inverse-probability-of-censoring weighted (IPCW) distance correlation
+#' Calculates an inverse-probability-of-censoring weighted (IPCW) distance correlation based on IPCW U-statistics \insertCite{datta2010inverse}{dcortools}.
 #'
-#' @param Y A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).
+#' @param Y A matrix with two columns, where the first column contains the survival times and the second column the status indicators (a survival object will work).
 #' @param X A vector or matrix containing the covariate information.
+#' @param affine logical; specifies if X should be transformed such that the result is invariant under affine transformations of X
+#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
+#' @param timetrafo specifies a transformation applied on the follow-up times. Can be "none", "log" or a user-specified function.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
+#' 
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @return An inverse-probability of censoring weighted estimate for the distance correlation between X and the survival times.
 #' @export
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{datta2010inverse}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#' @examples 
+#' X <- rnorm(100)
+#' survtime <- rgamma(100,abs(X))
+#' cens <- rexp(100)
+#' status <- as.numeric(survtime<cens)
+#' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
+#' surv <- cbind(time,status)
+#' ipcw.dcor(surv, X)
 
-
-ipcw.dcor <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
+ipcw.dcor <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
   
-  dcor <- ipcw.dcov(Y, X, type.X, metr.X, use, cutoff) / sqrt(ipcw.dcov(Y, Y[,1], type.X, metr.X, use, cutoff)) / sqrt(distsd(X =  X, type.X = type.X, metr.X = metr.X, use = use, bias.corr=TRUE))
+  dcor <- ipcw.dcov(Y, X, affine, standardize, timetrafo, type.X, metr.X, use, cutoff) / sqrt(ipcw.dcov(Y, Y[,1], affine, standardize, timetrafo, type.X, metr.X, use, cutoff)) / sqrt(distsd(X =  X, affine = affine, standardize = standardize, type.X = type.X, metr.X = metr.X, use = use, bias.corr=TRUE))
   
   return(dcor)
 }
 
 
 
-#' Calculates the inverse-probability-of-censoring weighted (IPCW) distance covariance
+#' Calculates an inverse-probability-of-censoring weighted (IPCW) distance covariance based on IPCW U-statistics \insertCite{datta2010inverse}{dcortools}.
 #'
 #' @param Y A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).
 #' @param X A vector or matrix containing the covariate information.
+#' @param affine logical; indicates if X should be transformed such that the result is invariant under affine transformations of X
+#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
+#' @param timetrafo specifies a transformation applied on the follow-up times. Can be "none", "log" or a user-specified function.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
+#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @return An inverse-probability of censoring weighted estimate for the distance covariance between X and the survival times.
 #' @export
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{datta2010inverse}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#' @examples 
+#' X <- rnorm(100)
+#' survtime <- rgamma(100,abs(X))
+#' cens <- rexp(100)
+#' status <- as.numeric(survtime<cens)
+#' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
+#' surv <- cbind(time,status)
+#' ipcw.dcov(surv, X)
 
-
-ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
+ipcw.dcov <- function(Y, X, affine = FALSE, standardize = FALSE,  timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
 
     # extract sample size and dimension
 
@@ -63,6 +123,15 @@ ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all"
 
     time <- time[IX]
     status <- status[IX]
+    
+    if (timetrafo != "none") {
+      if (timetrafo == "log")
+        time <- log(time)
+        else {
+        trafo <- match.fun(timetrafo)
+        time <- trafo(time)
+        }
+    }
 
 
     if (p==1)
@@ -71,31 +140,7 @@ ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all"
         X <- X[IX,]
 
 
-    events <- which(status == 1)
-    
-    if (!is.null(cutoff)) {
-      time[time>=cutoff] <- cutoff
-      status[time>=cutoff] <- 1
-    }
-      
-  
-    # calculate IPC weights
 
-
-    ipcw <- rep(0, n)
-    ipcw[events[1]] <- 1 / (n - events[1] + 1)
-   
-    help <- sapply(1:n, function(x) ((n - x) / (n - x + 1)) ^ status[x])
-
-    for (i in (events[1] + 1):n) {
-        ipcw[i]<- prod(help[1:(i - 1)]) * (status[i] / (n - i + 1))
-    }
-
-    ipcw <- ipcw * n
-
-    ipcw <- ipcw[events]
-    time <- time[events]
-    status <- status[events]
     
     if (use == "complete.obs") {
       ccX <- which(complete.cases(X))
@@ -112,17 +157,69 @@ ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all"
       status <- status[ccX]
     }
     
+    
+    events <- which(status == 1)
+    
+    if (!is.null(cutoff)) {
+      time[time>=cutoff] <- cutoff
+      status[time>=cutoff] <- 1
+    }
+    
+    
+    # calculate IPC weights
+    
+    
+    ipcw <- rep(0, n)
+    ipcw[events[1]] <- 1 / (n - events[1] + 1)
+    
+    help <- sapply(1:n, function(x) ((n - x) / (n - x + 1)) ^ status[x])
+    
+    for (i in (events[1] + 1):n) {
+      ipcw[i]<- prod(help[1:(i - 1)]) * (status[i] / (n - i + 1))
+    }
+    
+    ipcw <- ipcw * n
+    
+    ipcw <- ipcw[events]
+    time <- time[events]
+    status <- status[events]
+    
+    if (affine == TRUE) {
+      if (p > n) {
+        stop("Affinely invariant distance variance cannot be calculated for p>n")
+      }
+      if (type.X == "distance") {
+        stop("Affinely invariant distance variance cannot be calculated for type distance")
+      }
+      if (p > 1) {
+        X <- X %*% Rfast::spdinv(mroot(var(X)))
+      } else {
+        X <- X / sd(X)
+      }
+    } else if (standardize) {
+      if (type.X == "distance") {
+        stop("Standardization cannot be applied for type distance.")
+      }
+      if (p > 1) {
+        X <- standardise(X, center = FALSE)
+      } else {
+        X <- X / sd(X)
+      }
+    }
+    
 
 
-    if (p==1)
-        X <- X[events]
-    else
-        X <- X[events,]
-
+    
 
     #distance matrices
 
-    distX <- distmat(X, metr.X, p)
+    if (type.X == "distance") {
+      distXall <- X
+    } else {
+      distXall <- distmat(X, metr.X, p)
+    }
+    distX <- distXall[events, events]
+    
     distT <- Rfast:::Dist(time)
     k <- sum(status)
 
@@ -157,17 +254,46 @@ ipcw.dcov <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all"
 
 
 
-#' Performs a permutation test based on the IPCW distance covariance
+#' Performs a permutation test based on the IPCW distance covariance.
 #'
 #' @param Y A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).
 #' @param X A vector or matrix containing the covariate information.
+#' @param affine logical; indicates if X should be transformed such that the result is invariant under affine transformations of X
+#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
+#' @param timetrafo specifies a transformation applied on the follow-up times. Can be "none", "log" or a user-specified function.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
+#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @param B The number of permutations used for the permutation test
 #' @return An list with two arguments, $dcov contains the IPCW distance covariance, $pvalue the corresponding p-value
 #' @export
-
-
-ipcw.dcov.test <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL, B=499)
+#' @references
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{datta2010inverse}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#' @examples 
+#' X <- rnorm(100)
+#' survtime <- rgamma(100,abs(X))
+#' cens <- rexp(100)
+#' status <- as.numeric(survtime<cens)
+#' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
+#' surv <- cbind(time,status)
+#' ipcw.dcov.test(surv, X)
+#' ipcw.dcov.test(surv, X, cutoff = quantile(time,0.8)) # often better performance when using a cutoff time
+#' 
+ipcw.dcov.test <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL, B=499)
 {
     ss.dimX <- dcortools:::extract_np(X, "sample")
 
@@ -202,6 +328,16 @@ ipcw.dcov.test <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = 
 
     time <- time[IX]
     status <- status[IX]
+    
+    
+    if (timetrafo != "none") {
+      if (timetrafo == "log")
+        time <- log(time)
+      else {
+        trafo <- match.fun(timetrafo)
+        time <- trafo(time)
+      }
+    }
 
     if (p==1)
         X <- X[IX]
@@ -209,29 +345,7 @@ ipcw.dcov.test <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = 
         X <- X[IX,]
 
 
-    events <- which(status == 1)
-    
-    if (!is.null(cutoff)) {
-      time[time>=cutoff] <- cutoff
-      status[time>=cutoff] <- 1
-    }
-
-
-    ipcw <- rep(0, n)
-    ipcw[events[1]] <- 1 / (n - events[1]+1)
-
-    help <- sapply(1:n, function(x) ((n - x) / (n - x +1)) ^ status[x])
-
-    for (i in (events[1] + 1):n)
-    {
-        ipcw[i]<- prod(help[1:(i - 1)]) * (status[i] / (n - i + 1))
-    }
-
-    ipcw <- ipcw * n
-
-    ipcw <- ipcw[events]
-    time <- time[events]
-    status <- status[events]
+ 
 
     if (use == "complete.obs") {
       ccX <- which(complete.cases(X))
@@ -248,8 +362,63 @@ ipcw.dcov.test <- function(Y, X, type.X = "sample", metr.X = "euclidean", use = 
       status <- status[ccX]
     }
     
+    events <- which(status == 1)
+    
+    if (!is.null(cutoff)) {
+      time[time>=cutoff] <- cutoff
+      status[time>=cutoff] <- 1
+    }
+    
+    
+    # calculate IPC weights
+    
+    
+    ipcw <- rep(0, n)
+    ipcw[events[1]] <- 1 / (n - events[1] + 1)
+    
+    help <- sapply(1:n, function(x) ((n - x) / (n - x + 1)) ^ status[x])
+    
+    for (i in (events[1] + 1):n) {
+      ipcw[i]<- prod(help[1:(i - 1)]) * (status[i] / (n - i + 1))
+    }
+    
+    ipcw <- ipcw * n
+    
+    ipcw <- ipcw[events]
+    time <- time[events]
+    status <- status[events]
+    
+    
+    
+    
+    if (affine == TRUE) {
+      if (p > n) {
+        stop("Affinely invariant distance variance cannot be calculated for p>n")
+      }
+      if (type.X == "distance") {
+        stop("Affinely invariant distance variance cannot be calculated for type distance")
+      }
+      if (p > 1) {
+        X <- X %*% Rfast::spdinv(mroot(var(X)))
+      } else {
+        X <- X / sd(X)
+      }
+    } else if (standardize) {
+      if (type.X == "distance") {
+        stop("Standardization cannot be applied for type distance.")
+      }
+      if (p > 1) {
+        X <- standardise(X, center = FALSE)
+      } else {
+        X <- X / sd(X)
+      }
+    }
 
-    distXall <- distmat(X, metr.X, p)
+    if (type.X == "distance") {
+      distXall <- X
+    } else {
+      distXall <- distmat(X, metr.X, p)
+    }
     distX <- distXall[events, events]
     distT <- Rfast:::Dist(time)
     k <- sum(status)

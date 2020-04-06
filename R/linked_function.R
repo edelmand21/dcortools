@@ -1,25 +1,43 @@
-#' Plots a linked chart for exploratory data analysis from a dcmatrix object
+#' Plots a linked chart for exploratory data analysis from a dcmatrix object using the functionality provided by the "rlc" package. 
 #'
 #' @param dcmatrix A dcmatrix object
-#' @param X must be specified is dcmatrix object does not contain data; should contain the same data as used in calculation of the dcmatrix object
+#' @param X should only be specified if the dcmatrix object does not contain the original data (see argument "return.data" of dcmatrix); should contain the same data as used in the calculation of the dcmatrix object.
 #' @param Y see X.
-#' @param heatmap Which dependence measure to use for the heatmap. Options are "dcor", "dcov", "logp" (for -log10 of the p-value), "cor" (for Pearson correlation) and "abscor" (for the absolute value of Pearson correlation)
+#' @param heatmap specifies the dependence measure to use for the heatmap. Options are "dcor", "dcov", "logp" (for -log10 of the p-value), "cor" (for Pearson correlation) and "abscor" (for the absolute value of Pearson correlation).
 #' @param heatmap0 Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, two heatmaps are plotted, the first using the dependence meausure specified in heatmap0 and the dependencies between the groups in dcmatrix, the second using the dependence masure specified in heatmap and between the corresponding univariate variables.
 #' @param size Passed to the options of the scatter plot.
 #' @param opacity Passed to the options of the scatter plot.
-#' @param discX Mumeric vector specifying which variables in X should be interepreted as discrete. Factors and characters are always interpreted as discrete.
+#' @param discX Numeric vector specifying which columns in X should be interepreted as discrete variables. Factors and characters are always interpreted as discrete.
 #' @param discY see discX
-#' @param jitt.disc Jitter added to discrete variables
-#' @param jitt.cont Jitter added to continuous variables
-#' @param smooths Should smooths be fitted to the scatter plots. Options include "none", "xtoy" (x as predictor, y as dependent variable), "ytox" (y as predictor, x as dependent variable) and "both".
+#' @param jitt.disc Jitter added to discrete variables.
+#' @param jitt.cont Jitter added to continuous variables.
+#' @param smooths specifies smooths that fitted to the scatter plots. Options include "none", "xtoy" (x as predictor, y as dependent variable), "ytox" (y as predictor, x as dependent variable) and "both".
 #' @param smooth.type Type of the plotted smooths. Options are "loess", "spline" or "regline".
 #' @param palette.heatmap Passed to the options of the heatmap.
 #' @param palette.heatmap0 Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap.
-#' @param beeswarm logical; Plot a beeswarm plot instead of a standard scatter plot.
-#' @param cgtabmax If set to a numeric value a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.
+#' @param cgtabmax If set to a numeric value, a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.
 #' @param subdat optional; Data.frame with the same number of observations as the original data.
-#' @param subs Names of some factor(!) variables in subdat. This will allow to color the observations corresponding to these variables.
-#' @return A linked chart object opening in the browser
+#' @param subs Names of some factor(!) variables in subdat. This allows to color the observations corresponding to these variables.
+#' @param ... passed to the functions used for the smooths.
+#' @return A linked chart object opening in the browser. 
+#' 
+#' If the dcmatrix object contains only associations between univariate observations, this will consist of one heatmap with corresponding scatterplots.
+#' 
+#' If the dcmatrix contains associations between groups of variables, there are three windows. The first window displays a fixed heatmap contains the associations between the groups. The second window contains a changing heatmap containing the associations between single observations in selected groups. The third windows display a scatter plot between selected single observations.
+#' @examples A linked chart object opening in the browser.
+#' X <-  matrix(rnorm(1000), ncol = 10)
+#' dcm <- dcmatrix(X, return.data = TRUE)
+#' linked(dcm)
+#' 
+#' X <-  matrix(rnorm(1000), ncol = 10)
+#' dcm <- dcmatrix(X, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)))
+#' linked(dcm)
+#' 
+#' Y <- matrix(rnorm(600), ncol = 6)
+#' Y[,5] <- rbinom(100, 3, 0.5)
+#' Y[,6] <- rbinom(100, 2, 0.3)
+#' dcm <- dcmatrix(X, Y, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)), group.Y = c(rep("group1",4),rep("group2",1),rep("group3",1)), metr.Y = c("group1" = "euclidean", "group2" = "discrete", "group3" = "discrete"))
+#' linked(dcm, discY = c(5,6))
 #' @export
 linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dcor", size = 2, opacity = 1, discX =NULL, discY =NULL, jitt.disc = 0.1, jitt.cont = 0, smooths ="none", smooth.type = "loess", cgtabmax = NULL, subdat = NULL, subs =NULL, palette.heatmap = RColorBrewer::brewer.pal(9, "Reds"), palette.heatmap0 =RColorBrewer::brewer.pal(9, "YlGnBu"), coldom = NULL, coldom0 = NULL, ...){
 
@@ -49,6 +67,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
     }
   }
   
+ 
 
   
   if (is.null(X) & is.null(dcmatrix$X) )
@@ -58,8 +77,11 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
   if (is.null(X))
     X <- dcmatrix$X
   
-  if (is.vector(X))
-    X <- as.matrix(X)
+  #if (is.vector(X))
+  #  X <- as.matrix(X)
+  
+  X <- as.data.frame(X)
+
   
   n <- nrow(as.matrix(X))
   colgr <- rep(1,n)
@@ -96,8 +118,9 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
       triplot <- TRUE
     }
       gY <- dcmatrix$groupslistY
-    if (is.vector(Y))
-      Y <- as.matrix(Y)
+      Y <- as.data.frame(Y)
+    #if (is.vector(Y))
+    #  Y <- as.matrix(Y)
   }
   else
     Y <- X
@@ -223,7 +246,7 @@ linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dc
     lc_heatmap(
       dat(
         colourDomain = coldom,
-        value = hm[grpX,grpY],
+        value = matrix(hm[grpX,grpY],nrow=length(grpX),ncol=length(grpY)),
         palette = palette.heatmap,
         on_click = function(k) {        
           sampleX <<- grpX[k[1]]        

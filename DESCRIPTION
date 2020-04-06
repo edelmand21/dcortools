@@ -4,7 +4,8 @@ Version: 0.0.0.9000
 Authors@R: c(person("Dominic", "Edelmann", email = "dominic.edelmann@dkfz-heidelberg.de", role = c("aut", "cre")), person("Jochen", "Fiedler", email = "jochen.fiedler@itwm.fraunhofer.de", role = c("aut")))
 Description: Providing functionalities for calculating dependence measures based on distance correlation
 Depends: R (>= 3.3.3),  RcppArmadillo, Rfast, RcppEigen, Rcpp (>= 0.11.0), ggplot2, rlc, pheatmap, Hmisc
-Imports: Rcpp, RcppEigen, RcppArmadillo, rlc
+Imports: Rcpp, RcppEigen, RcppArmadillo, rlc, Rdpack
+RdMacros: Rdpack
 LinkingTo: RcppArmadillo, Rcpp, RcppEigen
 License: What license is it under?
 Encoding: UTF-8
