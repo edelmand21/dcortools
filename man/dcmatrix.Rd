@@ -99,18 +99,26 @@ S3 object of class "dcmatrix" with the following components
 \item{name pvalue}{matrix of p-values based on a corresponding distance covariance test based on the entries in dcov (if argument test is not "none").} 
 \item{name pvalue.adj}{matrix of p-values adjusted for multiple comparisons using the method specified in argument adjustp.} 
 \item{name pvalue.cor}{matrix of pvalues based on "pearson"/"spearman" correlation (if calc.cor is "pearson" or "spearman" and calc.pvalue.cor = TRUE).}
-\item{name dcov.pw,dcor.pw}{distance covariance/correlation matrices between the univariate observations (if calc.dcov.pw/calc.dcor.pw = TRUE.} 
+\item{name dcov.pw,dcor.pw}{distance covariance/correlation matrices between the univariate observations (if calc.dcov.pw/calc.dcor.pw = TRUE.)} 
 \item{name pvalue.pw}{matrix of p-values based on a corresponding distance covariance test based on the entries in dcov.pw (if argument test is not "none").}
 }
 \description{
 Calculates distance covariance and distance correlation matrices
 }
+\examples{
+X <- matrix(rnorm(1000), ncol = 10)
+dcm <- dcmatrix(X, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH") 
+dcm <- dcmatrix(X, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep(1,5),rep(2,5)), calc.dcor.pw = T, test.pw = "bb3")
+
+Y <- matrix(rnorm(600), ncol = 6)
+Y[,6] <- rbinom(100, 4, 0.3)
+dcm <- dcmatrix(X, Y, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH") 
+dcm <- dcmatrix(X, Y, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep("group1",5),rep("group2",5)), group.Y = c(rep("group1",5),"group2"), metr.X = "gaussauto", metr.Y = list("group1" = "gaussauto", "group2" = "discrete"))
+}
 \references{
 \insertRef{berschneider2018complex}{dcortools}
 
 \insertRef{bottcher2017detecting}{dcortools}
-
-\insertRef{chwialkowski2014wild}{dcortools}
 
 \insertRef{dueck2014affinely}{dcortools}
 

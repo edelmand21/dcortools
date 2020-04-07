@@ -2,7 +2,7 @@
 % Please edit documentation in R/dcsis.R
 \name{dcsis}
 \alias{dcsis}
-\title{Performs Distance correlation Sure Independence Screening (DC-SIS)}
+\title{Performs distance correlation sure independence screening \insertCite{li2012feature}{dcortools} with some additional options (such as calculating corresponding tests).}
 \usage{
 dcsis(
   X,
@@ -10,20 +10,20 @@ dcsis(
   k = floor(nrow(X)/log(nrow(X))),
   threshold = NULL,
   calc.cor = "spearman",
-  calc.pval.cor = FALSE,
+  calc.pvalue.cor = FALSE,
   return.data = FALSE,
   test = "none",
   adjustp = "none",
   b = 499,
   bias.corr = FALSE,
-  use = "everything",
+  use = "all",
   algorithm = "auto"
 )
 }
 \arguments{
-\item{X}{A dataframe or matrix with n rows and p columns.}
+\item{X}{A dataframe or matrix.}
 
-\item{Y}{A vector-valued response of length n}
+\item{Y}{A vector-valued response having the same length as the number of rows of X.}
 
 \item{k}{Number of variables that are selected (only used when threshold is not provided).}
 
@@ -31,27 +31,58 @@ dcsis(
 
 \item{calc.cor}{If set as "pearson", "spearman" or "kendall", a corresponding correlation matrix is addionally calculated.}
 
-\item{calc.pval.cor}{IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr}
+\item{calc.pvalue.cor}{logical; IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr.}
 
-\item{return.data}{IF TRUE, X and Y are contained in the resulting dcmatrix object.}
+\item{return.data}{logical; speciefies if the dcmatrix object should contain the original data.}
 
-\item{test}{specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.}
+\item{test}{Allows for additionally calculating a test based on distance Covariance. Specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.}
 
-\item{adjustp}{If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are returned.}
+\item{adjustp}{If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are additionally returned for the distance covariance test.}
 
-\item{b}{specifies the number of random permutations used for the permutation test. Ignored when test="gamma"}
+\item{b}{specifies the number of random permutations used for the permutation test. Ignored for all other tests.}
 
-\item{bias.corr}{logical; indicates if the bias corrected version of the sample distance covariance should be calculated}
+\item{bias.corr}{logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.}
 
-\item{use}{: "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.}
+\item{use}{:  "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.}
 
 \item{affine}{logical; indicates if the affinely transformed distance covariance should be calculated or not.}
 
-\item{algorithm:}{One of "auto", "fast", "memsave" and "standard". "memsave" is typically very inefficient for dcmatrix and should only be applied in exceptional cases.}
+\item{algorithm:}{specifies the algorithm used for calculating the distance covariance. 
+
+"fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+
+"memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+
+"standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+
+"auto" chooses the best algorithm for the specific setting using a rule of thumb.
+
+"memsave" is typically very inefficient for dcsis and should only be applied in exceptional cases.}
 }
 \value{
-dcmatrix object
+dcmatrix object with the following two additional slots:
+\item{name selected}{description indices of selected variables.} 
+\item{name dcor.selected}{ddistance correlation of the selected variables and the response Y.}
 }
 \description{
-Performs Distance correlation Sure Independence Screening (DC-SIS)
+Performs distance correlation sure independence screening \insertCite{li2012feature}{dcortools} with some additional options (such as calculating corresponding tests).
+}
+\examples{
+X <- matrix(rnorm(1e5), ncol=1000)
+Y <- sapply(1:100, function(u) sum(X[u,1:50]))+rnorm(100)
+a <- dcsis(X,Y)
+}
+\references{
+\insertRef{berschneider2018complex}{dcortools}
+\insertRef{dueck2014affinely}{dcortools}
+
+\insertRef{huang2017statistically}{dcortools}
+
+\insertRef{huo2016fast}{dcortools}
+
+\insertRef{li2012feature}{dcortools}
+
+\insertRef{szekely2007}{dcortools}
+
+\insertRef{szekely2009brownian}{dcortools}
 }

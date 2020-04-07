@@ -50,8 +50,6 @@
 #' 
 #' \insertRef{bottcher2017detecting}{dcortools}
 #' 
-#' \insertRef{chwialkowski2014wild}{dcortools}
-#' 
 #' \insertRef{dueck2014affinely}{dcortools}
 #' 
 #' \insertRef{huang2017statistically}{dcortools}

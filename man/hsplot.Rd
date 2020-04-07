@@ -2,24 +2,26 @@
 % Please edit documentation in R/methods_dcmatrix.R
 \name{hsplot}
 \alias{hsplot}
-\title{Draws a horseshoe plot}
+\title{Plots Pearson/Spearman/Kendall correlation against distance correlation (often resembling a horseshoe(hs)).}
 \usage{
 hsplot(dcmat, maxcomp = 1e+05, col = "blue", alpha = 1, cortrafo = "none")
 }
 \arguments{
-\item{dcmat:}{A dcmatrix object}
+\item{dcmat:}{A dcmatrix object.}
 
 \item{maxcomp:}{Maximum number of associations, for which distance correlation is plotted against correlation. If the number of associations in the dcmat object is larger, only the maxcomp associations with the largest difference between distance correlation and absolute (Pearson/Spearman/Kendall) correlation are plotted.}
 
-\item{col:}{color of the plot}
+\item{col:}{color of the plot.}
 
-\item{alpha:}{alpha parameter of the plot}
+\item{alpha:}{alpha parameter of the plot.}
 
-\item{cortrafo:}{Either "none" or "gaussiandcov". If "gaussiandcov", the distance covariance under assumption of normality is calculated and plotted against the actual distance correlation. Note that this is only sensible for Pearson correlation.}
+\item{cortrafo:}{Either "none" or "gaussiandcor". If "gaussiandcor", the distance correlation under assumption of normality is calculated and plotted against the actual distance correlation. 
+
+Note that this is only sensible for Pearson correlation!}
 }
 \value{
-Plot.
+Plot of (possibly transformed) Pearson/Spearman/Kendall correlation against distance correlation.
 }
 \description{
-Draws a horseshoe plot
+Plots Pearson/Spearman/Kendall correlation against distance correlation (often resembling a horseshoe(hs)).
 }

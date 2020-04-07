@@ -74,8 +74,17 @@ print.dcmatrix <- function(dcmat) {
   }
 }
 
+#' Plots a heatmap from a dcmatrix object using the function "pheatmap" from the package "pheatmap".
+#'
+#' @param dcmat a dcmatrix object.
+#' @param type specifies what should be displayed in the heatmap. One of "dcor", "dcov", "logp" (-log10 of corresponding p-values), "cor", "abscor" (absolute correlation), "logp.cor", "dcor.pw", "dcov.pw" or "logp.pw".
+#' @param trunc.up truncates the values to be plotted; if set to numeric, all values larger than trunc.up are set to trunc.up.
+#' @param trunc.low truncates the values to be plotted; if set to numeric, all values smaller than trunc.low are set to trunc.low.
+#' @param cluster_rows,cluster_cols,display_numbers passed to pheatmap().
+#' @param ... passed to pheatmap().
+#' @return a heatmap plotting the entries of the slot specified in type of the object specified in dcmat.
 #' @export
-plot.dcmatrix <- function(dcmat, type = "dcor", maxlogp=16, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers=TRUE,  ...) {
+plot.dcmatrix <- function(dcmat, type = "dcor", trunc.up = NULL, trunc.low = NULL, cluster_rows = FALSE, cluster_cols = FALSE, display_numbers=TRUE,  ...) {
   
   if (type =="dcor") {
     mat <- dcmat$dcor 
@@ -83,24 +92,26 @@ plot.dcmatrix <- function(dcmat, type = "dcor", maxlogp=16, cluster_rows = FALSE
     mat <- dcmat$dcov 
   } else if (type == "logp") {
     mat <- -log10(dcmat$pvalue)
-    mat[mat>maxlogp] <- maxlogp
   } else if (type == "cor") {
     mat <- dcmat$cor
   } else if (type == "abscor") {
     mat <- abs(dcmat$cor)
   } else if (type == "logp.cor") {
     mat <- -log10(dcmat$pval.cor)
-    mat[mat>maxlogp] <- maxlogp
   } else if (type == "dcor.pw") {
     mat <- dcmat$dcor.pw 
   } else if (type == "dcov.pw") {
     mat <- dcmat$dcov.pw 
   } else if (type == "logp.pw") {
     mat <- -log10(dcmat$pvalue.pw)
-    mat[mat>maxlogp] <- maxlogp
   } else {
     stop(" \"type\" must be one of \"dcor\",\"logp\",\"cor\",\"abscor\", \"logp.cor\",\"dcor.pw\",\"dcov.pw\" or \"logp.pw\" ")
   }
+  
+  if (!is.null(trunc.up) | !is.null(trunc.low)) {
+    mat[mat > trunc.up] <- trunc.up
+    mat[mat < trunc.low] <- trunc.low
+  }  
   
   if (anyNA(mat)|any(mat==Inf)) {
     warning("NAs and Infs were set to 0 for plotting.")
@@ -115,14 +126,16 @@ plot.dcmatrix <- function(dcmat, type = "dcor", maxlogp=16, cluster_rows = FALSE
 
 
 
-#' Draws a horseshoe plot
+#' Plots Pearson/Spearman/Kendall correlation against distance correlation (often resembling a horseshoe(hs)).
 #'
-#' @param dcmat: A dcmatrix object
+#' @param dcmat: A dcmatrix object.
 #' @param maxcomp: Maximum number of associations, for which distance correlation is plotted against correlation. If the number of associations in the dcmat object is larger, only the maxcomp associations with the largest difference between distance correlation and absolute (Pearson/Spearman/Kendall) correlation are plotted.
-#' @param col: color of the plot
-#' @param alpha: alpha parameter of the plot
-#' @param cortrafo: Either "none" or "gaussiandcov". If "gaussiandcov", the distance covariance under assumption of normality is calculated and plotted against the actual distance correlation. Note that this is only sensible for Pearson correlation.
-#' @return Plot.
+#' @param col: color of the plot.
+#' @param alpha: alpha parameter of the plot.
+#' @param cortrafo: Either "none" or "gaussiandcor". If "gaussiandcor", the distance correlation under assumption of normality is calculated and plotted against the actual distance correlation. 
+#' 
+#' Note that this is only sensible for Pearson correlation!
+#' @return Plot of (possibly transformed) Pearson/Spearman/Kendall correlation against distance correlation.
 #' @export
 hsplot <- function(dcmat, maxcomp = 1e5, col = "blue", alpha = 1, cortrafo = "none") {
   pw <- FALSE

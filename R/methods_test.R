@@ -16,10 +16,12 @@ print.dctest <- function(dctest) {
   else if (dctest$method == "wildbs2")
     testout <- "Wild bootstrap by Chwialkowksi, et al., Method 2"
   
-  if (dctest$pvalue<1e-6)
-    pvalout <- "< 1E-6"
-  else
-    pvalout <- round(dctest$pvalue,6)
+  #if (dctest$pvalue<1e-6)
+ #   pvalout <- "< 1E-6"
+ # else
+#pvalout <- round(dctest$pvalue,6)
+  
+  pvalout <- dctest$pvalue
   
   cat(paste("pvalue: ",pvalout,"   dcov: ",round(dctest$dcov,6),"   dcor: ",round(dctest$dcor,6)))
   cat("\n")

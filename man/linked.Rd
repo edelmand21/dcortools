@@ -2,7 +2,7 @@
 % Please edit documentation in R/linked_function.R
 \name{linked}
 \alias{linked}
-\title{Plots a linked chart for exploratory data analysis from a dcmatrix object}
+\title{Plots a linked chart for exploratory data analysis from a dcmatrix object using the functionality provided by the "rlc" package.}
 \usage{
 linked(
   dcmatrix,
@@ -31,11 +31,11 @@ linked(
 \arguments{
 \item{dcmatrix}{A dcmatrix object}
 
-\item{X}{must be specified is dcmatrix object does not contain data; should contain the same data as used in calculation of the dcmatrix object}
+\item{X}{should only be specified if the dcmatrix object does not contain the original data (see argument "return.data" of dcmatrix); should contain the same data as used in the calculation of the dcmatrix object.}
 
 \item{Y}{see X.}
 
-\item{heatmap}{Which dependence measure to use for the heatmap. Options are "dcor", "dcov", "logp" (for -log10 of the p-value), "cor" (for Pearson correlation) and "abscor" (for the absolute value of Pearson correlation)}
+\item{heatmap}{specifies the dependence measure to use for the heatmap. Options are "dcor", "dcov", "logp" (for -log10 of the p-value), "cor" (for Pearson correlation) and "abscor" (for the absolute value of Pearson correlation).}
 
 \item{heatmap0}{Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, two heatmaps are plotted, the first using the dependence meausure specified in heatmap0 and the dependencies between the groups in dcmatrix, the second using the dependence masure specified in heatmap and between the corresponding univariate variables.}
 
@@ -43,33 +43,53 @@ linked(
 
 \item{opacity}{Passed to the options of the scatter plot.}
 
-\item{discX}{Mumeric vector specifying which variables in X should be interepreted as discrete. Factors and characters are always interpreted as discrete.}
+\item{discX}{Numeric vector specifying which columns in X should be interepreted as discrete variables. Factors and characters are always interpreted as discrete.}
 
 \item{discY}{see discX}
 
-\item{jitt.disc}{Jitter added to discrete variables}
+\item{jitt.disc}{Jitter added to discrete variables.}
 
-\item{jitt.cont}{Jitter added to continuous variables}
+\item{jitt.cont}{Jitter added to continuous variables.}
 
-\item{smooths}{Should smooths be fitted to the scatter plots. Options include "none", "xtoy" (x as predictor, y as dependent variable), "ytox" (y as predictor, x as dependent variable) and "both".}
+\item{smooths}{specifies smooths that fitted to the scatter plots. Options include "none", "xtoy" (x as predictor, y as dependent variable), "ytox" (y as predictor, x as dependent variable) and "both".}
 
 \item{smooth.type}{Type of the plotted smooths. Options are "loess", "spline" or "regline".}
 
-\item{cgtabmax}{If set to a numeric value a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.}
+\item{cgtabmax}{If set to a numeric value, a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.}
 
 \item{subdat}{optional; Data.frame with the same number of observations as the original data.}
 
-\item{subs}{Names of some factor(!) variables in subdat. This will allow to color the observations corresponding to these variables.}
+\item{subs}{Names of some factor(!) variables in subdat. This allows to color the observations corresponding to these variables.}
 
 \item{palette.heatmap}{Passed to the options of the heatmap.}
 
 \item{palette.heatmap0}{Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap.}
 
-\item{beeswarm}{logical; Plot a beeswarm plot instead of a standard scatter plot.}
+\item{...}{passed to the functions used for the smooths.}
 }
 \value{
-A linked chart object opening in the browser
+A linked chart object opening in the browser. 
+
+If the dcmatrix object contains only associations between univariate observations, this will consist of one heatmap with corresponding scatterplots.
+
+If the dcmatrix contains associations between groups of variables, there are three windows. The first window displays a fixed heatmap contains the associations between the groups. The second window contains a changing heatmap containing the associations between single observations in selected groups. The third windows display a scatter plot between selected single observations.
 }
 \description{
-Plots a linked chart for exploratory data analysis from a dcmatrix object
+Plots a linked chart for exploratory data analysis from a dcmatrix object using the functionality provided by the "rlc" package.
+}
+\examples{
+A linked chart object opening in the browser.
+X <-  matrix(rnorm(1000), ncol = 10)
+dcm <- dcmatrix(X, return.data = TRUE)
+linked(dcm)
+
+X <-  matrix(rnorm(1000), ncol = 10)
+dcm <- dcmatrix(X, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)))
+linked(dcm)
+
+Y <- matrix(rnorm(600), ncol = 6)
+Y[,5] <- rbinom(100, 3, 0.5)
+Y[,6] <- rbinom(100, 2, 0.3)
+dcm <- dcmatrix(X, Y, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)), group.Y = c(rep("group1",4),rep("group2",1),rep("group3",1)), metr.Y = c("group1" = "euclidean", "group2" = "discrete", "group3" = "discrete"))
+linked(dcm, discY = c(5,6))
 }
