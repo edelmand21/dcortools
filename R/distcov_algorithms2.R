@@ -1,4 +1,44 @@
 
+dcovterms <- function(X,Y,n, calc.dcor, doperm, dobb3, alg.fast, alg.memsave, alg.standard, p, q, metr.X, metr.Y, type.X, type.Y) {
+
+    if (alg.fast) {
+    if (p == 1 & q == 1) {
+      if (metr.X == "euclidean" & metr.Y == "euclidean") {
+        terms <- dcovterms.fast(X, Y, n, calc.dcor = calc.dcor, calc.perm = doperm)
+      } else if (metr.X == "euclidean" & metr.Y == "discrete") {
+        Y <- as.factor(Y)
+        terms <- dcovterms.fast.numdisc(X, Y, n, calc.dcor = calc.dcor, calc.perm = doperm)
+      } else if (metr.X == "discrete" & metr.Y == "euclidean") {
+        X <- as.factor(X)
+        terms <- dcovterms.fast.numdisc(Y, X, n, calc.dcor = calc.dcor, calc.perm = doperm)
+      } else if (metr.X == "discrete" & metr.Y == "discrete") {
+        X <- as.factor(X)
+        Y <- as.factor(Y)
+        terms <- dcovterms.fast.discrete(X ,Y, n, calc.dcor = calc.dcor, calc.perm = doperm)
+      } else {
+        stop("metr.X and metr.Y have to be \"euclidean\" or \"discrete\" for fast algorithms")
+      }
+    } else {
+      stop("Dimensions of X and Y must be 1 for fast algorithms.")
+    }
+  } else if (alg.memsave) {
+    if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
+        metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
+      terms <- dcovterms.memsave(X, Y, metr.X, metr.Y, p, q, calc.dcor = calc.dcor, calc.perm = doperm)
+    } else {
+      stop("Memory efficient algorithms cannot be run with user-defined metrics")
+    }
+  } else if (alg.standard) {
+    terms <- dcovterms.standard(X, Y, type.X, type.Y, metr.X, metr.Y, p, q, calc.dcor = calc.dcor, calc.bb3 = dobb3 | doperm)
+}
+ return(terms)  
+}
+
+
+
+
+
+
 dcovterms.standard <- function(X, Y = NULL, type.X, type.Y = NULL, metr.X, metr.Y = NULL, p, q = NULL, calc.dvar = FALSE, calc.dcor = FALSE, calc.bb3 = FALSE) {
   ## if distance matrix is given
   if (type.X == "distance") {

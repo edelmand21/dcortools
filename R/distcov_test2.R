@@ -1,27 +1,82 @@
-#' Performs a distance covariance test
+#' Performs a distance covariance test.
 #'
-#' @param X contains either the first sample or its corresponding distance matrix. In the first case, this input can be either a vector of positive length, a matrix with one column or a data.frame with one column. In this case, type.X must be specified as "sample". In the second case, the input must be a distance matrix corresponding to the sample of interest. In this second case, type.X must be "distance".
+#' @param X contains either the first  sample or its corresponding distance matrix.
+#'
+#' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
+#'
+#' In the second case, the input must be a distance matrix corresponding to the sample of interest.
+#'
+#' If X is a sample, type.X must be specified as "sample". If X is a distance matrix, type.X must be specified as "distance".
 #' @param Y see X.
-#' @param test specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.
-#' @param b specifies the number of random permutations used for the permutation test. Ignored when test="gamma"
-#' @param affine logical; indicates if the affinely transformed distance covariance should be calculated or not.
-#' @param bias.corr logical; indicates if the bias corrected version of the sample distance covariance should be calculated.
-#' @param type.X either "sample" or "distance"; specifies the type of input for X.
+#' @param method specifies the type of test that is performed.
+#'  
+#' "permutation" performs a Monte Carlo Permutation test. 
+#' 
+#' "gamma" performs a test based on a gamma approximation of the test statistic under the null \insertCite{huang2017statistically}{dcortools}. This test tends to be anti-conservative, if the ``real'' p-value is small
+#' 
+#' "conservative" performs a conservative two-moment approximation \insertCite{berschneider2018complex}{dcortools}.
+#'   
+#' "bb3" performs a  three-moment approximation  \insertCite{berschneider2018complex}{dcortools}. This is the most precise parametric option, but only available with the standard algorithm.
+#' 
+#' "wildbs1" and "wilbs2" perform wild bootstrap tests \insertCite{chwialkowski2014wild}{dcortools}; experimental at the moment.
+#' @param b integer; specifies the number of random permutations/bootstrap samples used for the permutation or wild bootstraps tests. Ignored for other tests.
+#' @param ln numeric; block size parameter for wild bootstrap tests. Ignored for other tests.
+#' @param affine logical; specifies if the affinely invariant distance covariance \insertCite{dueck2014affinely}{dcortools} should be calculated or not.
+#' @param standardize logical; specifies if X and Y should be standardized dividing each component by its standard deviations. No effect when affine = TRUE.
+#' @param bias.corr logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param type.Y see type.X.
-#' @param metr.X specifies the metric which should be used for X to analyse the distance covariance. One of "euclidean", "gaussian", "boundsq", "alpha", "discrete" or a user-defined metric or kernel (see examples). It is also possible to specify parameters for "gaussian", "boundsq" and "alpha" via c(metr,param), e.g. c("gaussian",2) will result in a Gaussian metric with bandwith parameter 2.
+#' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
+#' 
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  
+#'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
-#' @param use : "all" uses all observations, "complete.obs" excludes NA's
-#' @param return.data : IF TRUE, X and Y are contained in the resulting distcov.test object.
-#' @param algorithm: One of "auto", "fast", "memsave" and "standard". "fast" has a lower computational complexity than "memsave" and "standard", but cannot be used with vector-valued data, other metrics than "discrete" or "euclidean" or the "bb3" test. "memsave" can be used in most settings and is slightly faster than the "standard" algorithm. Moreover, different to "standard", it can be used for very large sample size. "standard" can be used with all metrics and tests, however is the slowest algorithm and breaks down with large sample sizes. "auto" chooses an algorithm using feasibility and rules of thumb.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param return.data logical; speciefies if the test object should contain the original data.
+#' @param algorithm specifies the algorithm used for calculating the distance covariance. 
+#' 
+#' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
+#' 
+#' "memsave" uses a memory saving version of the standard algorithm with computational complexity O(n^2) but requiring only O(n) memory. 
+#' 
+#' "standard" uses the classical algorithm. User-specified metrics always use the classical algorithm.
+#' 
+#' "auto" chooses the best algorithm for the specific setting using a rule of thumb.
+#' 
 #' @return distcov.test object
 #' @export
-
+#' @references
+#' \insertRef{berschneider2018complex}{dcortools}
+#' 
+#' \insertRef{bottcher2017detecting}{dcortools}
+#' 
+#' \insertRef{chwialkowski2014wild}{dcortools}
+#' 
+#' \insertRef{dueck2014affinely}{dcortools}
+#' 
+#' \insertRef{huang2017statistically}{dcortools}
+#' 
+#' \insertRef{huo2016fast}{dcortools}
+#' 
+#' \insertRef{lyons2013distance}{dcortools}
+#' 
+#' \insertRef{sejdinovic2013equivalence}{dcortools}
+#' 
+#' \insertRef{szekely2007}{dcortools}
+#' 
+#' \insertRef{szekely2009brownian}{dcortools}
+#'
 distcov.test <- function(X,
                          Y,
                          method = "permutation",
                          b = 499L,
+                         ln = 20,
                          affine = FALSE,
-                         bias.corr = TRUE,
+                         standardize = FALSE,
+                         bias.corr = FALSE,
                          type.X = "sample",
                          type.Y = "sample",
                          metr.X = "euclidean",
@@ -40,7 +95,7 @@ distcov.test <- function(X,
   m <- ss.dimY$Sample.Size
   q <- ss.dimY$Dimension
   
-  dogamma <- docons  <- dobb3 <-  doperm <- FALSE
+  dogamma <- docons  <- dobb3 <-  doperm <- dowild1 <- dowild2 <-  FALSE
   
   output <- list()
   
@@ -52,8 +107,12 @@ distcov.test <- function(X,
     dobb3 <- TRUE
     else if (method == "permutation")
     doperm <- TRUE
+    else if (method == "wildbs1")
+    dowild1 <- TRUE
+    else if (method == "wildbs2")
+    dowild2 <- TRUE
     else
-    stop ("Test must be one of \"permutation\", \"gamma\", \"bb3\" or \"conservative\"")
+    stop ("Test must be one of \"permutation\", \"gamma\", \"bb3\", \"conservative\", \"wildbs1\" or \"wildbs2\" ")
     
   
   
@@ -102,8 +161,8 @@ distcov.test <- function(X,
       U1 <- dvarX  * dvarY
       U2 <- terms$adotdot / n / (n - 1)
       U3 <- terms$bdotdot / n / (n - 1)
-      alph <- 1 / 2 * (U2 ^ 2 * U3 ^ 2) / U1
-      beta <- 1 / 2 * (U2 * U3) / U1
+      alph <- 1/2*(U2 ^ 2 * U3 ^ 2) / U1
+      beta <- 1/2*(U2 * U3) / U1
       stat <- n *  dcov2 + U2 * U3
       pval <- pgamma(stat, alph, beta, lower.tail = FALSE) 
       return(pval)
@@ -117,7 +176,19 @@ distcov.test <- function(X,
         terms.sample <- terms.smp(terms,smp[[t]])
         return(termstodcov2(terms.sample$aijbij, terms.sample$Sab, Tab, n))
       })
-      pval <- (1 + length(which(reps > dcov2))) / (1 + b)
+      pval <- (1 + length(which(reps >= dcov2))) / (1 + b)
+      return(pval)
+    }
+  } else if (dowild1 | dowild2) {
+    testfunc <- function(dcov2, terms, smp, n, ...) {
+      cX <- doublecent(terms$distX)
+      cY <- doublecent(terms$distY)
+      dXY <- cX*cY
+      stat <- sum(dXY)
+      reps <- sapply(1:b, function(t) {
+        return(t(smp[[t]]) %*% dXY %*% smp[[t]])
+      })
+      pval <- (1 + length(which(reps >= stat))) / (1 + b)
       return(pval)
     }
   } else if (docons) {
@@ -127,8 +198,7 @@ distcov.test <- function(X,
       est.var <- (est.m2 - est.m1 ^ 2)
       alpha <- sqrt(est.var / 2 / est.m1 ^ 2)
       stat <- terms$aijbij / n - 2 * terms$Sab / n ^ 2 + terms$adotdot * terms$bdotdot / n ^ 3
-      pval <- pchisq(stat * sqrt(2) / sqrt(est.var), df = 1 / alpha, lower.tail = FALSE)  
-      return(pval)
+      pval <- pchisq(stat * sqrt(2) / sqrt(est.var), df = 1 / alpha, lower.tail = FALSE) 
     }
   } else if (dobb3) {
     testfunc <- function(terms, moms, n,...) {
@@ -196,14 +266,28 @@ distcov.test <- function(X,
     } else {
       Y <- Y / sd(Y)
     }
+  } else if (standardize) {
+    if (type.X == "distance" | type.Y == "distance") {
+      stop("Standardization cannot be applied for type distance.")
+    }
+    if (p > 1) {
+      X <- standardise(X, center = FALSE)
+    } else {
+      X <- X / sd(X)
+    }
+    if (q > 1) {
+      Y <- standardise(Y, center = FALSE)
+    } else {
+      Y <- Y / sd(Y)
+    }
   }
   
   if (algorithm == "auto") {
-    if (p == 1 & q == 1 & metr.X %in% c("euclidean", "discrete") 
-        & metr.Y %in% c("euclidean", "discrete") & n > 100 & dobb3 == FALSE) {
+    if (p == 1 & q == 1 & metr.X[1] %in% c("euclidean", "discrete") 
+        & metr.Y %in% c("euclidean", "discrete") & n > 100 &  type.X == "sample" & type.Y == "sample" & !(dobb3|dowild1|dowild2)) {
       algorithm <- "fast"
     } else if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-               metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & dobb3 == FALSE) {
+               metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") & type.X == "sample" & type.Y == "sample" & !(dobb3|dowild1|dowild2)) {
       algorithm <- "memsave"
     } else {
       algorithm <- "standard"
@@ -229,11 +313,23 @@ distcov.test <- function(X,
     stop ("Algorithm must be one of \"fast\", \"standard\", \"memsave\" or \"auto\"")
   
   
-  if (!alg.standard & dobb3) 
-    stop("bb3 p-value calculation is only possible with algorithm=standard!")
+  if (!alg.standard & (dobb3|dowild1|dowild2))
+    stop("bb3 and wild bootstrap p-value calculation is only possible with algorithm=standard!")
   
   
-  if (doperm) {
+  if (dowild1 | dowild2) {
+   perms <- lapply(1:b, function(t) {
+      epsilon <- rnorm(n+1)
+      W <- rep(NA,n)
+      W[1] <- exp(-1/ln) * epsilon[1]+sqrt(1-exp(-2/ln)) *epsilon[2]
+      for (r in 2:n) {
+        W[r] <- exp(-1/ln) * W[r-1] + sqrt(1-exp(-2/ln))*epsilon[r+1]
+      }
+      if (dowild2)
+        W <- W - mean(W)
+      return(W)
+    })
+  } else if (doperm) {
     perms <- lapply(1:b, function(t) sample(1:n))
   } else {
     perms <- NULL
@@ -245,50 +341,10 @@ distcov.test <- function(X,
   if (type.Y == "distance")
     metr.Y <- "distance matrix provided"
   
+  terms <- dcovterms(X,Y,n, calc.dcor = TRUE, doperm = doperm, dobb3 = dobb3|dowild1|dowild2, alg.fast = alg.fast, alg.memsave = alg.memsave, alg.standard = alg.standard, p = p, q = q, metr.X = metr.X, metr.Y =metr.Y, type.X = type.X, type.Y = type.Y)
   
-  
-  if (alg.fast) {
-    if (p == 1 & q == 1) {
-      if (metr.X == "euclidean" & metr.Y == "euclidean") {
-        terms <- dcovterms.fast(X, Y, n, calc.dcor = TRUE, calc.perm = doperm)
-        if (doperm) 
-          terms.smp <- function(terms, smp) {sampleterms.fast(terms, smp)}
-      } else if (metr.X == "euclidean" & metr.Y == "discrete") {
-        Y <- as.factor(Y)
-        terms <- dcovterms.fast.numdisc(X, Y, n, calc.dcor = TRUE, calc.perm = doperm)
-        if (doperm) 
-          terms.smp <- function(terms, smp) {sampleterms.fast.numdisc(terms, smp)}
-      } else if (metr.X == "discrete" & metr.Y == "euclidean") {
-        X <- as.factor(X)
-        terms <- dcovterms.fast.numdisc(Y, X, n, calc.dcor = TRUE, calc.perm = doperm)
-        if (doperm) 
-          terms.smp <- function(terms, smp) {sampleterms.fast.numdisc(terms, smp)}
-      } else if (metr.X == "discrete" & metr.Y == "discrete") {
-        X <- as.factor(X)
-        Y <- as.factor(Y)
-        terms <- dcovterms.fast.discrete(X ,Y, n, calc.dcor = TRUE, calc.perm = doperm)
-        if (doperm) 
-          terms.smp <- function(terms, smp) {sampleterms.fast.discrete(terms, smp)}
-      } else {
-        stop("metr.X and metr.Y have to be \"euclidean\" or \"discrete\" for fast algorithms")
-      }
-    } else {
-      stop("Dimensions of X and Y must be 1 for fast algorithms.")
-    }
-  } else if (alg.memsave) {
-    if (metr.X[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete") &
-        metr.Y[1] %in% c("euclidean", "alpha", "gaussian", "boundsq", "minkowski", "discrete")) {
-      terms <- dcovterms.memsave(X, Y, metr.X, metr.Y, p, q, calc.dcor = TRUE, calc.perm = doperm)
-      if (doperm) 
-        terms.smp <- function(terms, smp) {sampleterms.memsave(terms, smp)}
-    } else {
-      stop("Memory efficient algorithms cannot be run with user-defined metrics")
-    }
-  } else if (alg.standard) {
-    terms <- dcovterms.standard(X, Y, type.X, type.Y, metr.X, metr.Y, p, q, calc.dcor = TRUE, calc.bb3 = dobb3 | doperm)
-    if (doperm) 
-      terms.smp <- function(terms, smp) {sampleterms.standard(terms, smp)}
-  }  
+  if (doperm)
+    terms.smp <- dcovterms.smp(terms, smp, alg.fast, alg.memsave, alg.standard, p, q, metr.X, metr.Y)
   
   
 
@@ -318,9 +374,13 @@ distcov.test <- function(X,
   output$method <- method
   output$affine <- affine
   output$bias.corr <- bias.corr
+  output$standardize <- standardize
   output$metr.X <- metr.X
   output$metr.Y <- metr.Y
   output$b <- b
+  
+ # if (dogamma) 
+  #  warning("The simple gamma approximation can be anticonservative, in particular for small p-values.")
   
   return(output)
 }
