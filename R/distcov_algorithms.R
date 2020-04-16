@@ -144,14 +144,14 @@ dcovterms.fast.discrete <- function(X, Y = NULL, n, calc.dvar = FALSE, calc.dcor
     return(list("aijaij" = aijaij, "Saa" = Saa, "Taa" = Taa))
   } 
   
-  nXY <- table(X,Y)
-  nX <- rowSums(nXY)
-  nY <- colSums(nXY)
+  nXY <- Rfast::Table(X, Y, names = FALSE)
+  nX <- Rfast::rowsums(nXY)
+  nY <- Rfast::colsums(nXY)
   
   
   aidot <- as.numeric(n - nX)
   adotdot <- sum(aidot * nX)
-  bidot <- n - nY
+  bidot <- as.numeric(n - nY)
   bdotdot <- sum(bidot * nY)
   
   aijbij <- n * n - sum(nX * nX) - sum(nY * nY) + sum(nXY * nXY)
@@ -184,22 +184,22 @@ dcovterms.fast.numdisc <- function(X, Y, n, calc.dcor =FALSE, calc.perm = FALSE)
 
   
   sX.X <- cumsum(X.sort.X)
-  alphaX <- 0:(n-1)
+  alphaX <- 0:(n - 1)
   betaX <- sX.X - X.sort.X
-  Xdot <-sX.X[n]
+  Xdot <- sX.X[n]
   Y.sortX <- Y[IX0]
   
   aidot <- Xdot + (2 * alphaX - n) * X.sort.X - 2 * betaX
   adotdot <- sum(aidot)
-  levY <-levels(Y)
-  nY <- table(Y)
+  levY <- levels(Y)
+  nY <- Rfast::Table(Y, names = FALSE)
   aijbij <- adotdot
   
   
   for (lvl in levY) {
     set0 <- which(Y.sortX == lvl)
     n0 <- length(set0)
-    alphaX0 <- 0:(n0-1)
+    alphaX0 <- 0:(n0 - 1)
     X0 <- X.sort.X[set0]
     sX.X0 <- cumsum(X0)
     betaX0 <- sX.X0 - X0
@@ -212,20 +212,47 @@ dcovterms.fast.numdisc <- function(X, Y, n, calc.dcor =FALSE, calc.perm = FALSE)
   bidot <- as.numeric(n - nY[Y.sortX])
   bdotdot <- sum(bidot)
   
-  Sab <- vector_prod_sum(aidot,bidot)
+  Sab <- vector_prod_sum(aidot, bidot)
   
   
   if (calc.dcor) {
-    XXdot <- sum(X^2)
-    aijaij <- 2 * n * XXdot - 2* Xdot^2
+    XXdot <- sum(X ^ 2)
+    aijaij <- 2 * n * XXdot - 2 * Xdot ^ 2
     bijbij <- n * (n - 1) - sum(nY * (nY - 1))
     Saa <- sum(aidot * aidot)
     Sbb <- sum(bidot * bidot)
     if (calc.perm)
-      return(list("aijbij" = aijbij, "Sab" = Sab, "aijaij" = aijaij, "Saa" = Saa, "adotdot" = adotdot, "bijbij" = bijbij, "Sbb" = Sbb, "bdotdot" = bdotdot,
-                  "aidot" = aidot, "bidot" = bidot, "X.sort.X" = X.sort.X, "Y.sortX" = Y.sortX, "levY" = levY, "n" = n))
+      return(
+        list(
+          "aijbij" = aijbij,
+          "Sab" = Sab,
+          "aijaij" = aijaij,
+          "Saa" = Saa,
+          "adotdot" = adotdot,
+          "bijbij" = bijbij,
+          "Sbb" = Sbb,
+          "bdotdot" = bdotdot,
+          "aidot" = aidot,
+          "bidot" = bidot,
+          "X.sort.X" = X.sort.X,
+          "Y.sortX" = Y.sortX,
+          "levY" = levY,
+          "n" = n
+        )
+      )
     else
-      return(list("aijbij" = aijbij, "Sab" = Sab, "aijaij" = aijaij, "Saa" = Saa, "adotdot" = adotdot, "bijbij" = bijbij, "Sbb" = Sbb, "bdotdot" = bdotdot))
+      return(
+        list(
+          "aijbij" = aijbij,
+          "Sab" = Sab,
+          "aijaij" = aijaij,
+          "Saa" = Saa,
+          "adotdot" = adotdot,
+          "bijbij" = bijbij,
+          "Sbb" = Sbb,
+          "bdotdot" = bdotdot
+        )
+      )
   } 
   
   

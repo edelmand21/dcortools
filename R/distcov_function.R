@@ -8,7 +8,7 @@
 #' @param type.Y see type.X.
 #' @param metr.X specifies the metric which should be used for X to analyse the distance covariance. TO DO: Provide details for this.
 #' @param metr.Y see metr.X.
-#' @param use : specifies how to treat missing values. "complete.obs" excludes NA's, "all" (or any other value) uses all observations.
+#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" (or any other value) uses all observations.
 #' @param algorithm : "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or discrete. "memsave" uses a memory saving algorithm, which does not save the distance matrices. "standard" uses the classical algorithm. "auto" chooses the best algorithm for the specific setting using a rule of thumb.
 #' 
 #' @return numeric giving the distance covariance between samples X and Y.
@@ -293,6 +293,20 @@ distcor <-
     
     m <- ss.dimY$Sample.Size
     q <- ss.dimY$Dimension
+    
+    # if (type.X == "distance") {
+    #   if (is.null(dim.X)) {
+    #     stop("When X is a distance matrix the dimension of X must be specified as input.")
+    #   }
+    #   p <- dim.X
+    # }
+    # 
+    # if (type.Y == "distance") {
+    #   if (is.null(dim.X)) {
+    #     stop("When Y is a distance matrix the dimension of X must be specified as input.")
+    #   }
+    #   q <- dim.Y
+    # }
     
     if (use == "complete.obs") {
       ccX <- ccY <- cc <- 1:n
