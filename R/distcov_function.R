@@ -22,13 +22,13 @@ NULL
 #' @param type.Y see type.X.
 #' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto", "boundsq" or user-specified metrics (see examples).
 #'  
-#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  For "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric, parameter)", e.g. c("gaussian", 3) for a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #'  
 #'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
-#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param use specifies how to treat missing values. "complete.obs" excludes observations containing NA's, "all" uses all observations.
 #' @param algorithm specifies the algorithm used for calculating the distance covariance. 
 #' 
 #' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
@@ -61,7 +61,7 @@ NULL
 #' 
 #' distcov(X, Y, metr.X = "gaussauto", metr.Y = "gaussauto") # Gaussian distance with bandwidth choice based on median heuristic
 #' 
-#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha",0.5)) # alpha distance covariance with alpha = 0.5.
+#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha", 0.5)) # alpha distance covariance with alpha = 0.5.
 #' 
 #' 
 #' #Define a user-specified (slow) version of the alpha metric
@@ -70,7 +70,7 @@ NULL
 #'     as.matrix(dist(X)) ^ prm
 #' }
 #' 
-#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha",0.5)) # Gives the same result as before.
+#' distcov(X, Y, metr.X = c("alpha", 0.5), metr.Y = c("alpha", 0.5)) # Gives the same result as before.
 #'    
 #'
 #' #User-specified Gaussian kernel function  
@@ -79,23 +79,23 @@ NULL
 #'     exp(as.matrix(dist(X)) ^ 2 / 2 / prm ^ 2)
 #' }  
 #' 
-#' distcov(X, Y, metr.X = c("gauss_kernel", 2), metr.Y = c("gauss_kernel",2)) # calculates the distance covariance using the corresponding kernel-induced metric
+#' distcov(X, Y, metr.X = c("gauss_kernel", 2), metr.Y = c("gauss_kernel", 2)) # calculates the distance covariance using the corresponding kernel-induced metric
 #' 
-#' distcov(X, Y, metr.X = c("gaussian", 2), metr.Y = c("gaussian",2))  ## same result
+#' distcov(X, Y, metr.X = c("gaussian", 2), metr.Y = c("gaussian", 2))  ## same result
 #' 
 #' Y <- matrix(nrow = 100, ncol = 2)
 #' X <- rnorm(300)
-#' dim(X) <- c(100,3)
+#' dim(X) <- c(100, 3)
 #' Z <- rnorm(100)
 #' Y <- matrix(nrow = 100, ncol = 2)
-#' Y[,1] <- X[,1]+Z
-#' Y[,2] <- 3*Z
+#' Y[, 1] <- X[, 1] + Z
+#' Y[, 2] <- 3 * Z
 #' 
-#' distcov(X,Y) 
+#' distcov(X, Y) 
 #' 
-#' distcov(X,Y, affine = T) # affinely invariant distance covariance
+#' distcov(X, Y, affine = T) # affinely invariant distance covariance
 #' 
-#' distcov(X,Y, standardize = T) ## distance covariance standardizing the components of X and Y
+#' distcov(X, Y, standardize = T) ## distance covariance standardizing the components of X and Y
 #' 
 #' @export
 distcov <-
@@ -110,6 +110,7 @@ distcov <-
            metr.Y = "euclidean",
            use = "all",
            algorithm = "auto") {
+   
     #extract dimensions and sample sizes
     ss.dimX <- extract_np(X, type.X)
     ss.dimY <- extract_np(Y, type.Y)
@@ -152,11 +153,11 @@ distcov <-
     
     ## normalize samples if calculation of affinely invariant distance covariance is desired
     if (affine) {
-      if (p > n | q > n) {
-        stop("Affinely invariant distance covariance cannot be calculated for p>n")
-      }
       if (type.X == "distance" | type.Y == "distance") {
         stop("Affinely invariant distance covariance cannot be calculated for type distance")
+      }
+      if (p > n | q > n) {
+        stop("Affinely invariant distance covariance cannot be calculated for p>n")
       }
       if (p > 1) {
         X <- X %*% Rfast::spdinv(mroot(var(X)))
@@ -239,12 +240,12 @@ distcov <-
 #' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto", "boundsq" or user-specified metrics (see examples).
 #'  
-#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  For "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric, parameter)", e.g. c("gaussian", 3) for a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #'  
 #'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
-#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param use specifies how to treat missing values. "complete.obs" excludes observations containing NA's, "all" uses all observations.
 #' @param algorithm specifies the algorithm used for calculating the distance standard deviation. 
 #' 
 #' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
@@ -310,11 +311,11 @@ distsd <-
     
     ## normalize samples if calculation of affinely invariant distance covariance is desired
     if (affine == TRUE) {
-      if (p > n) {
-        stop("Affinely invariant distance variance cannot be calculated for p>n")
-      }
       if (type.X == "distance") {
         stop("Affinely invariant distance variance cannot be calculated for type distance")
+      }
+      if (p > n) {
+        stop("Affinely invariant distance variance cannot be calculated for p>n")
       }
       if (p > 1) {
         X <- X %*% Rfast::spdinv(mroot(var(X)))
@@ -409,13 +410,13 @@ distsd <-
 #' @param type.Y see type.X.
 #' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto", "boundsq" or user-specified metrics (see examples).
 #'  
-#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  For "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric, parameter)", e.g. c("gaussian", 3) for a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #'  
 #'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
-#' @param use specifies how to treat missing values. "complete.obs" excludes NA's, "all" uses all observations.
+#' @param use specifies how to treat missing values. "complete.obs" excludes observations containing NA's, "all" uses all observations.
 #' @param algorithm specifies the algorithm used for calculating the distance correlation. 
 #' 
 #' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
@@ -446,13 +447,13 @@ distsd <-
 #' X <- rnorm(200)
 #' Y <- rnorm(200)
 #' Z <- X + rnorm(200)
-#' dim(X) <- dim(Y) <- dim(Z) <- c(20,10)
+#' dim(X) <- dim(Y) <- dim(Z) <- c(20, 10)
 #' 
 #' # Demonstration that biased-corrected distance correlation is often more meaningful than without using bias-correction
-#' distcor(X,Y) 
-#' distcor(X,Z) 
-#' cor(X,Y,bias.corr=T)
-#' distcor(X,Z,bias.corr=T)
+#' distcor(X, Y) 
+#' distcor(X, Z) 
+#' cor(X, Y, bias.corr = T)
+#' distcor(X, Z, bias.corr = T)
 #' 
 #' # For more examples of the different option, see the documentation of distcov.
 distcor <-
@@ -509,11 +510,11 @@ distcor <-
     
     ## normalize samples if calculation of affinely invariant distance correlation is desired
     if (affine == TRUE) {
-      if (p > n | q > n) {
-        stop("Affinely invariant distance correlation cannot be calculated for p>n")
-      }
       if (type.X == "distance" | type.Y == "distance") {
         stop("Affinely invariant distance correlation cannot be calculated for type distance")
+      }
+      if (p > n | q > n) {
+        stop("Affinely invariant distance correlation cannot be calculated for p>n")
       }
       if (p > 1) {
         X <- X %*% Rfast::spdinv(mroot(var(X)))

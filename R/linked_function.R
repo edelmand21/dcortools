@@ -16,7 +16,7 @@
 #' @param palette.heatmap Passed to the options of the heatmap.
 #' @param palette.heatmap0 Only applicable if the dcmatrix object contains dependencies between objects that are not one-dimensional. In this case, passed to the options of the corresponding heatmap.
 #' @param cgtabmax If set to a numeric value, a contingency table is shown for any pair of variables for which each of the variable has not more than cgtabmax unique values.
-#' @param subdat optional; Data.frame with the same number of observations as the original data.
+#' @param subdat optional; data.frame with the same number of observations as the original data.
 #' @param subs Names of some factor(!) variables in subdat. This allows to color the observations corresponding to these variables.
 #' @param ... passed to the functions used for the smooths.
 #' @return A linked chart object opening in the browser. 
@@ -30,14 +30,14 @@
 #' linked(dcm)
 #' 
 #' X <-  matrix(rnorm(1000), ncol = 10)
-#' dcm <- dcmatrix(X, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)))
+#' dcm <- dcmatrix(X, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1", 3), rep("group2", 3), rep("group3", 4)))
 #' linked(dcm)
 #' 
 #' Y <- matrix(rnorm(600), ncol = 6)
-#' Y[,5] <- rbinom(100, 3, 0.5)
-#' Y[,6] <- rbinom(100, 2, 0.3)
-#' dcm <- dcmatrix(X, Y, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1",3),rep("group2",3),rep("group3",4)), group.Y = c(rep("group1",4),rep("group2",1),rep("group3",1)), metr.Y = c("group1" = "euclidean", "group2" = "discrete", "group3" = "discrete"))
-#' linked(dcm, discY = c(5,6))
+#' Y[, 5] <- rbinom(100, 3, 0.5)
+#' Y[, 6] <- rbinom(100, 2, 0.3)
+#' dcm <- dcmatrix(X, Y, return.data = TRUE, calc.dcor.pw = TRUE, group.X = c(rep("group1", 3), rep("group2", 3), rep("group3", 4)), group.Y = c(rep("group1", 4), rep("group2", 1), rep("group3", 1)), metr.Y = c("group1" = "euclidean", "group2" = "discrete", "group3" = "discrete"))
+#' linked(dcm, discY = c(5, 6))
 #' @export
 linked <- function(dcmatrix, X = NULL, Y =NULL, heatmap = "dcor", heatmap0 = "dcor", size = 2, opacity = 1, discX =NULL, discY =NULL, jitt.disc = 0.1, jitt.cont = 0, smooths ="none", smooth.type = "loess", cgtabmax = NULL, subdat = NULL, subs =NULL, palette.heatmap = RColorBrewer::brewer.pal(9, "Reds"), palette.heatmap0 =RColorBrewer::brewer.pal(9, "YlGnBu"), coldom = NULL, coldom0 = NULL, ...){
 

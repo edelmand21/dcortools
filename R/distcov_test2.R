@@ -1,6 +1,6 @@
 #' Performs a distance covariance test.
 #'
-#' @param X contains either the first  sample or its corresponding distance matrix.
+#' @param X contains either the first sample or its corresponding distance matrix.
 #'
 #' In the first case, X can be provided either as a vector (if one-dimensional), a matrix or a data.frame (if two-dimensional or higher). 
 #'
@@ -28,9 +28,9 @@
 #' @param type.Y see type.X.
 #' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto", "boundsq" or user-specified metrics (see examples).
 #'  
-#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric, parameter)", c("gaussian", 3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #'  
 #'  See \insertCite{lyons2013distance,sejdinovic2013equivalence,bottcher2017detecting;textual}{dcortools} for details.
 #' @param metr.Y see metr.X.
@@ -250,11 +250,11 @@ distcov.test <- function(X,
   
   ## normalize samples if calculation of affinely invariant distance covariance is desired
   if (affine == TRUE) {
-    if (p > n | q > n) {
-      stop("Affinely invariant distance covariance cannot be calculated for p>n")
-    }
     if (type.X == "distance" | type.Y == "distance") {
       stop("Affinely invariant distance covariance cannot be calculated for type 'distance'")
+    }
+    if (p > n | q > n) {
+      stop("Affinely invariant distance covariance cannot be calculated for p>n")
     }
     if (p > 1) {
       X <- X %*% Rfast::spdinv(mroot(var(X)))

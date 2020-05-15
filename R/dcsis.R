@@ -5,14 +5,14 @@
 #' @param k Number of variables that are selected (only used when threshold is not provided).
 #' @param threshold If provided, variables with a distance correlation larger than threshold are selected.
 #' @param calc.cor If set as "pearson", "spearman" or "kendall", a corresponding correlation matrix is addionally calculated.
-#' @param calc.pvalue.cor logical; IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr.
+#' @param calc.pvalue.cor logical; IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor = "kendall") using Hmisc::rcorr.
 #' @param return.data logical; speciefies if the dcmatrix object should contain the original data.
 #' @param test Allows for additionally calculating a test based on distance Covariance. Specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.
 #' @param adjustp If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are additionally returned for the distance covariance test.
 #' @param b specifies the number of random permutations used for the permutation test. Ignored for all other tests.
 #' @param affine logical; indicates if the affinely transformed distance covariance should be calculated or not.
 #' @param bias.corr logical; specifies if the bias corrected version of the sample distance covariance \insertCite{huo2016fast}{dcortools} should be calculated.
-#' @param use :  "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.
+#' @param use "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.
 #' @param algorithm: specifies the algorithm used for calculating the distance covariance. 
 #' 
 #' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
@@ -43,9 +43,9 @@
 #' 
 #' \insertRef{szekely2009brownian}{dcortools}
 #' @examples
-#' X <- matrix(rnorm(1e5), ncol=1000)
-#' Y <- sapply(1:100, function(u) sum(X[u,1:50]))+rnorm(100)
-#' a <- dcsis(X,Y)
+#' X <- matrix(rnorm(1e5), ncol = 1000)
+#' Y <- sapply(1:100, function(u) sum(X[u, 1:50])) + rnorm(100)
+#' a <- dcsis(X, Y)
 
 dcsis <- function(X, 
                   Y,

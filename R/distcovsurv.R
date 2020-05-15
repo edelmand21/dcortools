@@ -8,9 +8,9 @@
 #' @param type.X For "distance", X is interpreted as a distance matrix. For "sample", X is intepreted as a sample.
 #' @param metr.X specifies the metric which should be used to compute the distance matrix for X (ignored when type.X = "distance").
 #' 
-#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto", "boundsq" or user-specified metrics (see examples).
+#'  Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto", "boundsq" or user-specified metrics (see examples).
 #'  
-#'  For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
+#'  For "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)", c("gaussian",3) for example uses a Gaussian metric with bandwith parameter 3; the default parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @return An inverse-probability of censoring weighted estimate for the distance correlation between X and the survival times.
 #' @export
@@ -32,11 +32,11 @@
 #' \insertRef{szekely2009brownian}{dcortools}
 #' @examples 
 #' X <- rnorm(100)
-#' survtime <- rgamma(100,abs(X))
+#' survtime <- rgamma(100, abs(X))
 #' cens <- rexp(100)
-#' status <- as.numeric(survtime<cens)
+#' status <- as.numeric(survtime < cens)
 #' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
-#' surv <- cbind(time,status)
+#' surv <- cbind(time, status)
 #' ipcw.dcor(surv, X)
 
 ipcw.dcor <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
@@ -56,7 +56,7 @@ ipcw.dcor <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "no
 #' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
 #' @param timetrafo specifies a transformation applied on the follow-up times. Can be "none", "log" or a user-specified function.
 #' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
-#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
+#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @return An inverse-probability of censoring weighted estimate for the distance covariance between X and the survival times.
 #' @export
@@ -78,11 +78,11 @@ ipcw.dcor <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "no
 #' \insertRef{szekely2009brownian}{dcortools}
 #' @examples 
 #' X <- rnorm(100)
-#' survtime <- rgamma(100,abs(X))
+#' survtime <- rgamma(100, abs(X))
 #' cens <- rexp(100)
-#' status <- as.numeric(survtime<cens)
+#' status <- as.numeric(survtime < cens)
 #' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
-#' surv <- cbind(time,status)
+#' surv <- cbind(time, status)
 #' ipcw.dcov(surv, X)
 
 ipcw.dcov <- function(Y, X, affine = FALSE, standardize = FALSE,  timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL) {
@@ -185,11 +185,11 @@ ipcw.dcov <- function(Y, X, affine = FALSE, standardize = FALSE,  timetrafo = "n
     status <- status[events]
     
     if (affine == TRUE) {
-      if (p > n) {
-        stop("Affinely invariant distance variance cannot be calculated for p>n")
-      }
       if (type.X == "distance") {
         stop("Affinely invariant distance variance cannot be calculated for type distance")
+      }
+      if (p > n) {
+        stop("Affinely invariant distance variance cannot be calculated for p>n")
       }
       if (p > 1) {
         X <- X %*% Rfast::spdinv(mroot(var(X)))
@@ -258,11 +258,11 @@ ipcw.dcov <- function(Y, X, affine = FALSE, standardize = FALSE,  timetrafo = "n
 #'
 #' @param Y A column with two rows, where the first row contains the survival times and the second row the status indicators (a survival object will work).
 #' @param X A vector or matrix containing the covariate information.
-#' @param affine logical; indicates if X should be transformed such that the result is invariant under affine transformations of X
-#' @param standardize logical; should X be standardized using the standard deviations of single observations?. No effect when affine = TRUE.
+#' @param affine logical; indicates if X should be transformed such that the result is invariant under affine transformations of X.
+#' @param standardize logical; should X be standardized using the standard deviations of single observations. No effect when affine = TRUE.
 #' @param timetrafo specifies a transformation applied on the follow-up times. Can be "none", "log" or a user-specified function.
-#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample
-#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gauss", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
+#' @param type.X For "distance", X is interpreted as a distance matrix. For "sample" (or any other value), X is intepreted as a sample.
+#' @param metr.X etr.X specifies the metric which should be used for X to analyse the distance covariance. Options are "euclidean", "discrete", "alpha", "minkowski", "gaussian", "gaussauto" and "boundsq". For "alpha", "minkowski", "gauss", "gaussauto" and "boundsq", the corresponding parameters are specified via "c(metric,parameter)" (see examples); the standard parameter is 2 for "minkowski" and "1" for all other metrics.
 #' @param cutoff If provided, all survival times larger than cutoff are set to the cutoff and all corresponding status indicators are set to one. Under most circumstances, choosing a cutoff is highly recommended.
 #' @param B The number of permutations used for the permutation test
 #' @return An list with two arguments, $dcov contains the IPCW distance covariance, $pvalue the corresponding p-value
@@ -285,13 +285,13 @@ ipcw.dcov <- function(Y, X, affine = FALSE, standardize = FALSE,  timetrafo = "n
 #' \insertRef{szekely2009brownian}{dcortools}
 #' @examples 
 #' X <- rnorm(100)
-#' survtime <- rgamma(100,abs(X))
+#' survtime <- rgamma(100, abs(X))
 #' cens <- rexp(100)
-#' status <- as.numeric(survtime<cens)
+#' status <- as.numeric(survtime < cens)
 #' time <- sapply(1:100, function(u) min(survtime[u], cens[u]))
-#' surv <- cbind(time,status)
+#' surv <- cbind(time, status)
 #' ipcw.dcov.test(surv, X)
-#' ipcw.dcov.test(surv, X, cutoff = quantile(time,0.8)) # often better performance when using a cutoff time
+#' ipcw.dcov.test(surv, X, cutoff = quantile(time, 0.8)) # often better performance when using a cutoff time
 #' 
 ipcw.dcov.test <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo = "none", type.X = "sample", metr.X = "euclidean", use = "all", cutoff = NULL, B=499)
 {
@@ -392,11 +392,11 @@ ipcw.dcov.test <- function(Y, X, affine = FALSE, standardize = FALSE, timetrafo 
     
     
     if (affine == TRUE) {
-      if (p > n) {
-        stop("Affinely invariant distance variance cannot be calculated for p>n")
-      }
       if (type.X == "distance") {
         stop("Affinely invariant distance variance cannot be calculated for type distance")
+      }
+      if (p > n) {
+        stop("Affinely invariant distance variance cannot be calculated for p>n")
       }
       if (p > 1) {
         X <- X %*% Rfast::spdinv(mroot(var(X)))

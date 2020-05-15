@@ -1,12 +1,12 @@
 #' Calculates distance covariance and distance correlation matrices
 #'
-#' @param X A dataframe or matrix.
-#' @param Y Either NULL or a dataframe or a matrix with the same number of rows as X. If only X is provided, distance covariances/correlations are calculated between all groups in X. If X and Y are provided, distance covariances/correlations are calculated between all groups in X and all groups of Y.
+#' @param X A data.frame or matrix.
+#' @param Y Either NULL or a data.frame or a matrix with the same number of rows as X. If only X is provided, distance covariances/correlations are calculated between all groups in X. If X and Y are provided, distance covariances/correlations are calculated between all groups in X and all groups of Y.
 #' @param calc.dcov logical; specifies if the distance covariance matrix is calculated.
 #' @param calc.dcor logical; specifies if the distance correlation matrix is calculated.
 #' @param calc.cor If set as "pearson", "spearman" or "kendall", a corresponding correlation matrix is addionally calculated.
 #' @param calc.pvalue.cor logical; IF TRUE, a p-value based on the Pearson or Spearman correlation matrix is calculated (not implemented for calc.cor ="kendall") using Hmisc::rcorr.
-#' @param return.data logical; speciefies if the dcmatrix object should contain the original data.
+#' @param return.data logical; specifies if the dcmatrix object should contain the original data.
 #' @param test specifies the type of test that is performed, "permutation" performs a Monte Carlo Permutation test. "gamma" performs a test based on a gamma approximation of the test statistic under the null. "conservative" performs a conservative two-moment approximation. "bb3" performs a quite precise three-moment approximation and is recommended when computation time is not an issue.
 #' @param adjustp If setting this parameter to "holm", "hochberg", "hommel", "bonferroni", "BH", "BY" or "fdr", corresponding adjusted p-values are additionally returned for the distance covariance test.
 #' @param b specifies the number of random permutations used for the permutation test. Ignored for all other tests.
@@ -16,7 +16,7 @@
 #' @param group.Y A vector, each entry specifying the group membership of the respective column in Y. Each group is handled as one sample for calculating the distance covariance/correlation matrices. If NULL, every sample is handled as an individual group.
 #' @param metr.X Either a single metric or a list providing a metric for each group in X (see examples).
 #' @param metr.Y see metr.X.
-#' @param use : "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.
+#' @param use "all" uses all observations, "complete.obs" excludes NA's, "pairwise.complete.obs" uses pairwise complete observations for each comparison.
 #' @param algorithm specifies the algorithm used for calculating the distance covariance. 
 #' 
 #' "fast" uses an O(n log n) algorithm if the observations are one-dimensional and metr.X and metr.Y are either "euclidean" or "discrete", see also \insertCite{huo2016fast;textual}{dcortools}. 
@@ -36,8 +36,8 @@
 #' @param metr.pw.X Either a single metric or a list providing a metric for each single observation/column in X (see metr.X).
 #' @param metr.pw.Y See metr.pw.Y.
 #' @return S3 object of class "dcmatrix" with the following components
-#' \item{name X,Y}{description original data (if return.data = TRUE).} 
-#' \item{name dcov,dcor}{distance covariance/correlation matrices between the groups specified in group.X/group.Y (if calc.dcov/calc.dcor = TRUE).} 
+#' \item{name X, Y}{description original data (if return.data = TRUE).} 
+#' \item{name dcov, dcor}{distance covariance/correlation matrices between the groups specified in group.X/group.Y (if calc.dcov/calc.dcor = TRUE).} 
 #' \item{name corr}{correlation matrix between the univariate observations/columns (if cal.cor is "pearson", "spearman" or "kendall").}
 #' \item{name pvalue}{matrix of p-values based on a corresponding distance covariance test based on the entries in dcov (if argument test is not "none").} 
 #' \item{name pvalue.adj}{matrix of p-values adjusted for multiple comparisons using the method specified in argument adjustp.} 
@@ -67,12 +67,12 @@
 #'@examples
 #' X <- matrix(rnorm(1000), ncol = 10)
 #' dcm <- dcmatrix(X, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH") 
-#' dcm <- dcmatrix(X, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep(1,5),rep(2,5)), calc.dcor.pw = T, test.pw = "bb3")
+#' dcm <- dcmatrix(X, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep(1, 5), rep(2, 5)), calc.dcor.pw = T, test.pw = "bb3")
 #' 
 #' Y <- matrix(rnorm(600), ncol = 6)
 #' Y[,6] <- rbinom(100, 4, 0.3)
 #' dcm <- dcmatrix(X, Y, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH") 
-#' dcm <- dcmatrix(X, Y, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep("group1",5),rep("group2",5)), group.Y = c(rep("group1",5),"group2"), metr.X = "gaussauto", metr.Y = list("group1" = "gaussauto", "group2" = "discrete"))
+#' dcm <- dcmatrix(X, Y, test="bb3",calc.cor = "pearson", calc.pvalue.cor = T, adjustp = "BH", group.X = c(rep("group1", 5), rep("group2", 5)), group.Y = c(rep("group1", 5), "group2"), metr.X = "gaussauto", metr.Y = list("group1" = "gaussauto", "group2" = "discrete"))
 dcmatrix <- function (X,
                       Y = NULL,
                       calc.dcov = TRUE,
